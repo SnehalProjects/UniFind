@@ -6,18 +6,43 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import React, { useState } from 'react';
+  import React, { useEffect, useState } from 'react';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { GoogleAuthProvider, getAuth, signInWithCredential } from '@react-native-firebase/auth';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secure, setSecure] = useState(true); // 🔐 toggle visibility
   const navigation = useNavigation();
+
+  useEffect(() => {
+    GoogleSignin.configure({
+    webClientId: '925395177236-rlup1ghbi07fri5bgec56obk5bga540v.apps.googleusercontent.com', // from Firebase > Project Settings > Web Client ID
+    });
+  },[])  
+
+  async function onGoogleButtonPress() {
+  await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  const signInResult = await GoogleSignin.signIn();
+
+  idToken = signInResult.data?.idToken;
+  if (!idToken) {
+    idToken = signInResult.idToken;
+  }
+  if (!idToken) {
+    throw new Error('No ID token found');
+  }
+  console.log(idToken)
+  Alert.alert("Success login")
+
+  const googleCredential = GoogleAuthProvider.credential(signInResult.data.idToken);
+  return signInWithCredential(getAuth(), googleCredential);
+}
 
   const onLogin = async () => {
     if (!email || !password) {
@@ -33,7 +58,7 @@ const LoginScreen = () => {
     try {
       await auth().signInWithEmailAndPassword(email, password);
       Alert.alert('Success', 'Logged in successfully!');
-      navigation.navigate('ProfileMainScreen' as never)
+      navigation.navigate('HomeScreen' as never)
 
     } catch (err: any) {
       if (err.code === 'auth/user-not-found') {
@@ -61,37 +86,6 @@ const LoginScreen = () => {
       });
   };
 
-  const signInWithGoogle = async () => {
-  try {
-    await GoogleSignin.hasPlayServices();
-    const userInfo = await GoogleSignin.signIn();
-    const { idToken } = await GoogleSignin.getTokens();
-
-    if (!idToken) {
-      Alert.alert('Google Sign-In Error', 'No ID token returned');
-      return;
-    }
-
-    const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-    const userCredential = await auth().signInWithCredential(googleCredential);
-
-    const uid = userCredential.user.uid;
-    const userDoc = await firestore().collection('users').doc(uid).get();
-
-    if (!userDoc.exists) {
-      // Ask user to complete profile
-      navigation.navigate('SignUpScreen' as never);
-    } else {
-      Alert.alert('Google Sign-In Successful');
-      navigation.navigate('ProfileScreen' as never);
-    }
-
-  } catch (error) {
-    const errMsg = (error instanceof Error) ? error.message : 'Something went wrong';
-    Alert.alert('Google Sign-In Error', errMsg);
-  }
-};
-
   return (
     <View style={styles.container}>
       <Text style={styles.signup}>Welcome Back</Text>
@@ -116,7 +110,7 @@ const LoginScreen = () => {
           secureTextEntry={secure}
         />
         <TouchableOpacity onPress={() => setSecure(!secure)} style={styles.eyeIcon}>
-          <FontAwesome name={secure ? 'eye' : 'eye-slash'} size={22} color="#7f89b0" />
+          <FontAwesome name={secure ? 'eye-slash' : 'eye'} size={22} color="#7f89b0" />
         </TouchableOpacity>
       </View>
 
@@ -128,7 +122,7 @@ const LoginScreen = () => {
         <Text style={styles.forgot}>Forgot Password?</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.googleBtn} onPress={signInWithGoogle}>
+      <TouchableOpacity style={styles.googleBtn} onPress={onGoogleButtonPress}>
         <Text style={styles.googleText}>Continue with Google</Text>
       </TouchableOpacity>
 
@@ -148,7 +142,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     height: '100%',
-    backgroundColor: '#bbc9f8',
+    backgroundColor: '#cfd8ee',
   },
   inputBox: {
     borderWidth: 1,
@@ -188,7 +182,7 @@ const styles = StyleSheet.create({
   },
   login: {
     width: '90%',
-    backgroundColor: '#5a6cb2',
+    backgroundColor: '#4b6cb7',
     padding: 12,
     borderRadius: 30,
     alignItems: 'center',

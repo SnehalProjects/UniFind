@@ -105,10 +105,10 @@ const ProfileScreen = () => {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back-outline" size={24} color="#1f2937" />
+          <Icon name="chevron-back" size={24} color="#1f2937" />
         </TouchableOpacity>
         <Text style={styles.title}>Profile Details</Text>
       </View>
@@ -154,20 +154,20 @@ const ProfileScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 24, backgroundColor: '#f5f7fb', flex: 1 },
+  container: { padding: 24, backgroundColor: '#cfd8ee', flex: 1 },
   headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 30 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#1f2937', marginLeft: 10 },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#1f2937', marginLeft: 10,fontFamily:'serif' },
   imageContainer: { alignItems: 'center', marginBottom: 20 },
   profileImage: { width: 100, height: 100, borderRadius: 50, marginBottom: 10 },
   uploadHint: { color: '#6b7280', fontSize: 12 },
   uploadLoader: { position: 'absolute', top: 40, left: 40 },
-  infoBox: { backgroundColor: '#e0e7ff', borderRadius: 10, padding: 16, marginBottom: 12 },
+  infoBox: { backgroundColor: '#f5f7fb', borderRadius: 10, padding: 16, marginBottom: 12 },
   label: { fontSize: 14, color: '#4b5563', fontWeight: '600' },
   value: { fontSize: 16, color: '#111827', marginTop: 4 },
   input: { fontSize: 16, color: '#111827', marginTop: 4, backgroundColor: '#fff', padding: 8, borderRadius: 6 },
-  editBtn: { backgroundColor: '#5a6cb2', borderRadius: 30, padding: 12, marginTop: 30, alignItems: 'center' },
+  editBtn: { backgroundColor: '#4b6cb7', borderRadius: 30, padding: 12, marginTop: 30, alignItems: 'center' },
   editText: { color: 'white', fontWeight: 'bold' },
-  saveBtn: { backgroundColor: '#10b981', borderRadius: 30, padding: 12, marginTop: 30, alignItems: 'center' },
+  saveBtn: { backgroundColor: '#4b6cb7', borderRadius: 30, padding: 12, marginTop: 30, alignItems: 'center' },
   saveText: { color: 'white', fontWeight: 'bold' },
 });
 

@@ -1,4 +1,4 @@
-// ✅ UPDATED ProfileMainScreen
+// screens/DrawerScreen.tsx
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -14,7 +14,8 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 
-const ProfileMainScreen = () => {
+// ✅ NEW: Accept closeDrawer prop
+const DrawerScreen = ({ closeDrawer }: { closeDrawer: () => void }) => {
   const navigation = useNavigation();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -26,7 +27,7 @@ const ProfileMainScreen = () => {
 
       try {
         const doc = await firestore().collection('users').doc(currentUser.uid).get();
-        if (doc.exists) {
+        if (doc.exists()) {
           setUserData(doc.data());
         }
       } catch (error) {
@@ -42,6 +43,7 @@ const ProfileMainScreen = () => {
   const handleLogout = async () => {
     await auth().signOut();
     navigation.navigate('LoginScreen' as never);
+    closeDrawer(); // ✅ NEW: Close drawer on logout
   };
 
   return (
@@ -53,7 +55,11 @@ const ProfileMainScreen = () => {
           <ActivityIndicator size="small" />
         ) : (
           <Image
-            source={{ uri: userData?.profileImage || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png' }}
+            source={{
+              uri:
+                userData?.profileImage ||
+                'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
+            }}
             style={styles.profileImage}
           />
         )}
@@ -65,19 +71,22 @@ const ProfileMainScreen = () => {
 
       <View style={styles.menuSection}>
         {[
+          { icon: 'home-outline', label: 'Home', route: 'HomeScreen' },
+          { icon: 'download-outline', label: 'My Posts' },
           { icon: 'heart-outline', label: 'Personal Details', route: 'ProfileScreen' },
-          { icon: 'download-outline', label: 'My Lost Posts' },
-          { icon: 'language-outline', label: 'My Found Posts' },
-          { icon: 'location-outline', label: 'Language' },
-          { icon: 'card-outline', label: 'Theme' },
-          { icon: 'desktop-outline', label: 'Display' },
-          { icon: 'trash-outline', label: 'Settings' },
+          { icon: 'settings-outline', label: 'Settings' },
         ].map((item, index) => (
           <TouchableOpacity
             key={index}
             style={styles.menuItem}
             onPress={() => {
-              if (item.route) navigation.navigate(item.route as never);
+              // 🔄 UPDATED: Handle Home screen separately
+              if (item.route === 'HomeScreen') {
+                closeDrawer(); // ✅ Just close if already on Home
+              } else if (item.route) {
+                navigation.navigate(item.route as never);
+                closeDrawer(); // ✅ Close drawer after navigating
+              }
             }}
           >
             <Icon name={item.icon} size={22} color="#374151" style={styles.menuIcon} />
@@ -159,4 +168,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProfileMainScreen;
+export default DrawerScreen;

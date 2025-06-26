@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     height: '100%',
-    backgroundColor:'#bbc9f8',
+    backgroundColor:'#cfd8ee',
   },
   inputBox: {
     borderWidth: 1,
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   register: {
     width: '90%',
-    backgroundColor: '#5a6cb2',
+    backgroundColor: '#4b6cb7',
     padding: 12,
     borderRadius: 30,
     alignItems: 'center',
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     marginTop:10
   },
   link: {
-    color: '#5a6cb2',
+    color: '#4b6cb7',
     fontWeight: 'bold',
     fontSize: 16,
     marginTop: 10,
