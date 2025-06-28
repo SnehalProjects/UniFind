@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "925395177236-qfb23ooq5irrp6o3sj5nhbmae667g5i0.apps.googleusercontent.com",
+          "client_id": "925395177236-f95lmo09dmes0qj5saso29uodtp43iap.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.unifind",
-            "certificate_hash": "d3ec91952e8bd4405e7c1eb700623307cb889fb6"
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
           }
         },
         {

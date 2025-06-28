@@ -54,7 +54,7 @@ const SignUpScreen = () => {
       });
 
       Alert.alert('Success', 'User account created !');
-      navigation.navigate('LoginScreen' as never); 
+      navigation.navigate('HomeScreen' as never); 
       } 
       catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {

@@ -8,10 +8,10 @@ import {
 } from 'react-native';
   import React, { useEffect, useState } from 'react';
 import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import firestore from '@react-native-firebase/firestore';
 import { GoogleAuthProvider, getAuth, signInWithCredential } from '@react-native-firebase/auth';
 
 const LoginScreen = () => {
@@ -23,26 +23,68 @@ const LoginScreen = () => {
   useEffect(() => {
     GoogleSignin.configure({
     webClientId: '925395177236-rlup1ghbi07fri5bgec56obk5bga540v.apps.googleusercontent.com', // from Firebase > Project Settings > Web Client ID
+    forceCodeForRefreshToken: true,
+    hostedDomain: 'charusat.edu.in',
     });
   },[])  
 
   async function onGoogleButtonPress() {
-  await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-  const signInResult = await GoogleSignin.signIn();
+    try {
+      // 1. Ensure Play Services are available
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
-  idToken = signInResult.data?.idToken;
-  if (!idToken) {
-    idToken = signInResult.idToken;
-  }
-  if (!idToken) {
-    throw new Error('No ID token found');
-  }
-  console.log(idToken)
-  Alert.alert("Success login")
+      // 2. Sign in with Google
+      const userInfo = await GoogleSignin.signIn();
+      const { idToken } = await GoogleSignin.getTokens();
 
-  const googleCredential = GoogleAuthProvider.credential(signInResult.data.idToken);
-  return signInWithCredential(getAuth(), googleCredential);
-}
+      if (!idToken) {
+        throw new Error('No ID token returned from Google');
+      }
+
+      // 4. Get Firebase credential and sign in to Firebase
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+      const userCredential = await auth().signInWithCredential(googleCredential);
+      const user = userCredential.user;
+
+      if (!user) {
+        throw new Error('Firebase user not found after Google Sign-In');
+      }
+
+      const uid = user.uid;
+
+      // 5. Check if the user already exists in Firestore
+      const userDoc = await firestore().collection('users').doc(uid).get();
+
+      if (userDoc.exists()) {
+      const userData = userDoc.data();
+
+      if (!userData?.course || !userData?.college || !userData?.semester) {
+        Alert.alert('Complete Profile', 'Please finish setting up your profile.');
+        navigation.navigate('CompleteProfileScreen' as never);
+      } else {
+        navigation.navigate('HomeScreen' as never);
+      }
+    } else {
+      // ⚠️ Profile does not exist, create a basic document and navigate to complete screen
+      await firestore().collection('users').doc(uid).set({
+        name: user.displayName || '',
+        email: user.email || '',
+        profileImage: user.photoURL || '',
+        course: '',
+        contact: '',
+        college: '',
+        semester: '',
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      });
+
+      Alert.alert('Almost there!', 'Please complete your profile.');
+      navigation.navigate('CompleteProfileScreen' as never);
+    }
+    } catch (error: any) {
+      console.error('[Google Sign-In Error]', error);
+      Alert.alert('Google Sign-In Error', error.message || 'Unknown error occurred');
+    }
+  }
 
   const onLogin = async () => {
     if (!email || !password) {
@@ -122,7 +164,7 @@ const LoginScreen = () => {
         <Text style={styles.forgot}>Forgot Password?</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.googleBtn} onPress={onGoogleButtonPress}>
+      <TouchableOpacity style={styles.googleBtn} onPress={() => onGoogleButtonPress().then(() => console.log('Signed in with Google!'))}>
         <Text style={styles.googleText}>Continue with Google</Text>
       </TouchableOpacity>
 

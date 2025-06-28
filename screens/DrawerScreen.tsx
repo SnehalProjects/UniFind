@@ -13,6 +13,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 // ✅ NEW: Accept closeDrawer prop
 const DrawerScreen = ({ closeDrawer }: { closeDrawer: () => void }) => {
@@ -42,6 +43,7 @@ const DrawerScreen = ({ closeDrawer }: { closeDrawer: () => void }) => {
 
   const handleLogout = async () => {
     await auth().signOut();
+    await GoogleSignin.signOut();  
     navigation.navigate('LoginScreen' as never);
     closeDrawer(); // ✅ NEW: Close drawer on logout
   };
@@ -74,7 +76,7 @@ const DrawerScreen = ({ closeDrawer }: { closeDrawer: () => void }) => {
           { icon: 'home-outline', label: 'Home', route: 'HomeScreen' },
           { icon: 'download-outline', label: 'My Posts' },
           { icon: 'heart-outline', label: 'Personal Details', route: 'ProfileScreen' },
-          { icon: 'settings-outline', label: 'Settings' },
+          { icon: 'settings-outline', label: 'Settings' ,route: 'SettingScreen'},
         ].map((item, index) => (
           <TouchableOpacity
             key={index}

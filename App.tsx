@@ -7,6 +7,8 @@ import SignUpScreen from './screens/SignUpScreen';
 import LoginScreen from './screens/LoginScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import DrawerScreen from './screens/DrawerScreen'; 
+import SettingScreen from './screens/SettingScreen';
+import CompleteProfileScreen from './screens/CompleteProfileScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -22,6 +24,8 @@ const App = () => {
         <Stack.Screen name="HomeScreen" component={HomeScreen}/>
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
         <Stack.Screen name="DrawerScreen" component={DrawerScreen} />
+        <Stack.Screen name="SettingScreen" component={SettingScreen} />
+        <Stack.Screen name="CompleteProfileScreen" component={CompleteProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
     </GestureHandlerRootView>
