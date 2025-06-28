@@ -32,7 +32,7 @@ const LoginScreen = () => {
     try {
       await auth().signInWithEmailAndPassword(email, password);
       Alert.alert('Success', 'Logged in successfully!');
-      navigation.navigate('HomeScreen' as never)
+      navigation.navigate('Home' as never)
 
     } catch (err: any) {
       if (err.code === 'auth/user-not-found') {

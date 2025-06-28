@@ -10,14 +10,18 @@ import {
   Image,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
+import { useNavigation } from '@react-navigation/native';
+import { DrawerNavigationProp } from '@react-navigation/drawer';
+import DrawerModal from '../screens/DrawerModal'
 
 const { width } = Dimensions.get('window');
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const [recentPosts, setRecentPosts] = useState([]);
+  const [isDrawerVisible, setDrawerVisible] = useState(false);
+
 
   useEffect(() => {
     const unsubscribe = firestore()
@@ -39,7 +43,7 @@ const HomeScreen = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => {}}>
+        <TouchableOpacity onPress={() => setDrawerVisible(true)}>
           <Ionicons name="menu" size={30} color={'#333'} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => {}}>
@@ -146,9 +150,11 @@ const HomeScreen = () => {
       >
         <Ionicons name="add" size={32} color="#000" />
       </TouchableOpacity>
+        <DrawerModal visible={isDrawerVisible} onClose={() => setDrawerVisible(false)} />
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
