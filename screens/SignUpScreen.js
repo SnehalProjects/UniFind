@@ -54,9 +54,9 @@ const SignUpScreen = () => {
       });
 
       Alert.alert('Success', 'User account created !');
-      navigation.navigate('HomeScreen' as never); 
+      navigation.navigate('HomeScreen'); 
       } 
-      catch (err: any) {
+      catch{
       if (err.code === 'auth/email-already-in-use') {
         Alert.alert('That email address is already in use!');
       } else if (err.code === 'auth/invalid-email') {
@@ -84,7 +84,11 @@ const SignUpScreen = () => {
       <Picker
         selectedValue={selectedCollege}
         onValueChange={itemValue => setSelectedCollege(itemValue)}
-        style={styles.picker}
+        style={[
+            styles.picker,
+            styles.placeholderColor
+          ]}
+        dropdownIconColor="#7f89b0"
       >
         <Picker.Item label="Select Collage" value="" />
         {colleges.map((college, index) => (
@@ -97,7 +101,11 @@ const SignUpScreen = () => {
       <Picker
         selectedValue={selectedSem}
         onValueChange={itemValue => setSelectedSem(itemValue)}
-        style={styles.picker}
+        style={[
+            styles.picker,
+            styles.placeholderColor
+          ]}
+        dropdownIconColor="#7f89b0"
       >
         <Picker.Item label="Select Semester" value="" />
         {semesters.map((sem, index) => (
@@ -124,7 +132,7 @@ const SignUpScreen = () => {
       />
 
       <TextInput
-        placeholder="Email"
+         placeholder="user@charusat.edu.in"
         placeholderTextColor={'#7f89b0'}
         style={styles.inputBox}
         value={email}
@@ -150,7 +158,7 @@ const SignUpScreen = () => {
 
       <View style={{flexDirection:'row',alignItems:'center'}}>
        <Text style={styles.alreadyText}>Already have an account ?    </Text>
-       <TouchableOpacity onPress={() => navigation.navigate('LoginScreen' as never)}>
+       <TouchableOpacity onPress={() => navigation.navigate('LoginScreen')}>
         <Text style={styles.link}>Login</Text>
       </TouchableOpacity>
       </View>
@@ -194,9 +202,13 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   picker: {
-    color: '#7f89b0',
-    fontSize: 16,
+    color: 'Black',
+    fontSize: 15,
   },
+  placeholderColor: {
+    color: '#7f89b0', 
+  },
+
   register: {
     width: '90%',
     backgroundColor: '#4b6cb7',

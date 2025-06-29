@@ -9,6 +9,10 @@ import ProfileScreen from './screens/ProfileScreen';
 import DrawerScreen from './screens/DrawerScreen'; 
 import SettingScreen from './screens/SettingScreen';
 import CompleteProfileScreen from './screens/CompleteProfileScreen';
+import PostItemScreen from './screens/PostItemScreen';
+import LostItemsScreen from './screens/LostItemScreen';
+import FoundItemsScreen from './screens/FoundItemScreen';
+import ItemDetailScreen from './screens/ItemDetailScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -26,6 +30,10 @@ const App = () => {
         <Stack.Screen name="DrawerScreen" component={DrawerScreen} />
         <Stack.Screen name="SettingScreen" component={SettingScreen} />
         <Stack.Screen name="CompleteProfileScreen" component={CompleteProfileScreen} />
+        <Stack.Screen name="PostItem" component={PostItemScreen} />
+        <Stack.Screen name="LostItems" component={LostItemsScreen} />
+        <Stack.Screen name="FoundItems" component={FoundItemsScreen} />
+        <Stack.Screen name="ItemDetail" component={ItemDetailScreen} options={{ title: 'Item Details' }}/>
       </Stack.Navigator>
     </NavigationContainer>
     </GestureHandlerRootView>

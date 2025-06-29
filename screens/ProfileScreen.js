@@ -13,7 +13,6 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import storage from '@react-native-firebase/storage';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -21,35 +20,78 @@ import { launchImageLibrary } from 'react-native-image-picker';
 const colleges = ['ARP', 'CMPICA', 'CSPIT', 'DEPSTAR', 'IIIM', 'MTIN', 'PDPIAS', 'RPCP'];
 const semesters = ['1', '2', '3', '4', '5', '6', '7', '8'];
 
+const IMGBB_API_KEY = 'c0d620761e1a43633b65a8deec759687';
+
+const uploadImageToImgbb = async (imageUri) => {
+  const formData = new FormData();
+  formData.append('image', {
+    uri: imageUri,
+    type: 'image/jpeg',
+    name: 'upload.jpg',
+  });
+
+  try {
+    const response = await fetch(
+      `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
+      {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    const data = await response.json();
+    return data?.data?.url;
+  } catch (error) {
+    console.error('Image upload failed:', error);
+    return null;
+  }
+};
+
+
 const ProfileScreen = () => {
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState(null);
+  const [imageUri, setImageUri] = useState(null); // For local preview
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [selectedCollege, setSelectedCollege] = useState('');
   const [selectedSem, setSelectedSem] = useState('');
   const navigation = useNavigation();
+
+  const pickImage = () => {
+    launchImageLibrary({ mediaType: 'photo' }, response => {
+      const assets = response?.assets;
+
+      if (assets && assets.length > 0 && assets[0]?.uri) {
+        setImageUri(assets[0].uri);
+      } else {
+        console.warn('Image not selected or cancelled.');
+      }
+    });
+  };
+
 
   useEffect(() => {
     const fetchUserData = async () => {
       const currentUser = auth().currentUser;
       if (!currentUser) {
         Alert.alert('No user', 'Please login again.');
-        navigation.navigate('LoginScreen' as never);
+        navigation.navigate('LoginScreen');
         return;
       }
 
       try {
         const doc = await firestore().collection('users').doc(currentUser.uid).get();
         if (!doc.exists) {
-          navigation.navigate('SignUpScreen' as never);
+          navigation.navigate('SignUpScreen');
         } else {
           const data = doc.data();
           setUserData(data);
           setSelectedCollege(data.college || '');
           setSelectedSem(data.semester || '');
         }
-      } catch (err: any) {
+      } catch  {
         Alert.alert('Error', err.message);
       } finally {
         setLoading(false);
@@ -60,58 +102,40 @@ const ProfileScreen = () => {
   }, []);
 
   const handleSave = async () => {
-    const uid = auth().currentUser?.uid;
-    if (!uid) return;
+  const uid = auth().currentUser?.uid;
+  if (!uid) return;
 
-    try {
-      const updatedData = {
-        ...userData,
-        college: selectedCollege,
-        semester: selectedSem,
-      };
+  try {
+    setLoading(true);
 
-      await firestore().collection('users').doc(uid).update(updatedData);
-      setUserData(updatedData);
-      Alert.alert('Profile Updated!');
-      setIsEditing(false);
-    } catch (err: any) {
-      Alert.alert('Update Failed', err.message);
+    let imageUrl = userData.profileImage || null;
+    if (imageUri) {
+      const uploadedUrl = await uploadImageToImgbb(imageUri);
+      if (uploadedUrl) imageUrl = uploadedUrl;
     }
-  };
 
-  const handleChange = (field: string, value: string) => {
+    const updatedData = {
+      ...userData,
+      college: selectedCollege,
+      semester: selectedSem,
+      profileImage: imageUrl,
+    };
+
+    await firestore().collection('users').doc(uid).update(updatedData);
+    setUserData(updatedData);
+    setImageUri(null); // reset selected image
+    Alert.alert('Profile Updated!');
+    setIsEditing(false);
+  } catch (err) {
+    Alert.alert('Update Failed', err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  const handleChange = (field, value) => {
     setUserData({ ...userData, [field]: value });
-  };
-
-  const pickImage = async () => {
-    const result = await launchImageLibrary({
-      mediaType: 'photo',
-      quality: 0.8,
-      selectionLimit: 1,
-    });
-
-    if (result.didCancel || !result.assets || result.assets.length === 0) return;
-
-    const image = result.assets[0];
-    const uri = image.uri || (image as any).fileCopyUri;
-    if (!uri) return;
-
-    const uid = auth().currentUser?.uid;
-    if (!uid) return;
-
-    const reference = storage().ref(`/profileImages/${uid}_${Date.now()}`);
-    setUploading(true);
-    try {
-      await reference.putFile(uri);
-      const url = await reference.getDownloadURL();
-      setUserData(prev => ({ ...prev, profileImage: url }));
-      await firestore().collection('users').doc(uid).update({ profileImage: url });
-      Alert.alert('Success', 'Profile picture updated!');
-    } catch (err: any) {
-      Alert.alert('Upload Failed', err.message);
-    } finally {
-      setUploading(false);
-    }
   };
 
   if (loading || !userData) {
@@ -128,21 +152,31 @@ const ProfileScreen = () => {
       </View>
 
       <View style={styles.imageContainer}>
-        <TouchableOpacity onPress={pickImage}>
+        <TouchableOpacity onPress={isEditing && !imageUri ? pickImage : null} style={styles.imageWrapper}>
           <Image
             source={{
-              uri:
-                userData.profileImage ||
-                'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
+              uri: imageUri || userData.profileImage || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
             }}
             style={styles.profileImage}
           />
-          {uploading && <ActivityIndicator style={styles.uploadLoader} size="small" color="#000" />}
+
+          {/* Show camera icon when editing and no image is selected */}
+          {isEditing && !imageUri && (
+            <View style={styles.cameraOverlay}>
+              <Icon name="camera-outline" size={28} color="#fff" />
+            </View>
+          )}
+
+          {/* Show remove/close icon if new image is selected */}
+          
         </TouchableOpacity>
-        {isEditing && <Text style={styles.uploadHint}>Tap image to change</Text>}
+        {imageUri && (
+            <TouchableOpacity onPress={() => setImageUri(null)} style={styles.removeImageIcon}>
+              <Icon name="close-circle" size={24} color="#67666f" />
+            </TouchableOpacity>
+          )}
       </View>
 
-      {/* Name */}
       <View style={styles.infoBox}>
         <Text style={styles.label}>Name:</Text>
         {isEditing ? (
@@ -156,13 +190,11 @@ const ProfileScreen = () => {
         )}
       </View>
 
-      {/* Email */}
       <View style={styles.infoBox}>
         <Text style={styles.label}>Email:</Text>
         <Text style={styles.value}>{userData.email}</Text>
       </View>
 
-      {/* Course */}
       <View style={styles.infoBox}>
         <Text style={styles.label}>Course:</Text>
         {isEditing ? (
@@ -176,7 +208,6 @@ const ProfileScreen = () => {
         )}
       </View>
 
-      {/* College (Picker) */}
       <View style={styles.infoBox}>
         <Text style={styles.label}>College:</Text>
         {isEditing ? (
@@ -195,7 +226,6 @@ const ProfileScreen = () => {
         )}
       </View>
 
-      {/* Semester (Picker) */}
       <View style={styles.infoBox}>
         <Text style={styles.label}>Semester:</Text>
         {isEditing ? (
@@ -214,7 +244,6 @@ const ProfileScreen = () => {
         )}
       </View>
 
-      {/* Contact */}
       <View style={styles.infoBox}>
         <Text style={styles.label}>Contact:</Text>
         {isEditing ? (
@@ -253,9 +282,38 @@ const styles = StyleSheet.create({
     fontFamily: 'serif',
   },
   imageContainer: { alignItems: 'center', marginBottom: 20 },
-  profileImage: { width: 100, height: 100, borderRadius: 50, marginBottom: 10 },
-  uploadHint: { color: '#6b7280', fontSize: 12 },
-  uploadLoader: { position: 'absolute', top: 40, left: 40 },
+    profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+    imageWrapper: {
+    position: 'relative',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    overflow: 'hidden',
+  },
+  cameraOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  removeImageIcon: {
+      position: 'absolute',
+      top: 3,
+      right: '32%',
+      width: 32,
+      height: 32,
+      color:"fff"
+  },
   infoBox: {
     backgroundColor: '#f5f7fb',
     borderRadius: 10,

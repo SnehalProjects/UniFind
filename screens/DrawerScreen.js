@@ -16,9 +16,9 @@ import { useNavigation } from '@react-navigation/native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 // ✅ NEW: Accept closeDrawer prop
-const DrawerScreen = ({ closeDrawer }: { closeDrawer: () => void }) => {
+const DrawerScreen = ({ closeDrawer })=> {
   const navigation = useNavigation();
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,7 +44,7 @@ const DrawerScreen = ({ closeDrawer }: { closeDrawer: () => void }) => {
   const handleLogout = async () => {
     await auth().signOut();
     await GoogleSignin.signOut();  
-    navigation.navigate('LoginScreen' as never);
+    navigation.navigate('LoginScreen');
     closeDrawer(); // ✅ NEW: Close drawer on logout
   };
 
@@ -86,7 +86,7 @@ const DrawerScreen = ({ closeDrawer }: { closeDrawer: () => void }) => {
               if (item.route === 'HomeScreen') {
                 closeDrawer(); // ✅ Just close if already on Home
               } else if (item.route) {
-                navigation.navigate(item.route as never);
+                navigation.navigate(item.route);
                 closeDrawer(); // ✅ Close drawer after navigating
               }
             }}
