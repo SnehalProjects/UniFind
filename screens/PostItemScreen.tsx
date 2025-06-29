@@ -143,9 +143,10 @@ const handleSubmit = async () => {
       description,
       location,
       date: date.toISOString(),
-      email,
+      email: email.trim().toLowerCase(),
       imageUrl,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      status: 'Active'
     });
 
     Toast.show({

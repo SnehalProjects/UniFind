@@ -72,7 +72,7 @@ const DrawerScreen = ({ closeDrawer }: { closeDrawer: () => void }) => {
       <View style={styles.menuSection}>
         {[
           { icon: 'home-outline', label: 'Home', route: 'HomeScreen' },
-          { icon: 'download-outline', label: 'My Posts' },
+          { icon: 'download-outline', label: 'My Posts', route: 'MyPostsScreen' },
           { icon: 'heart-outline', label: 'Personal Details', route: 'ProfileScreen' },
           { icon: 'settings-outline', label: 'Settings' },
         ].map((item, index) => (
@@ -80,12 +80,11 @@ const DrawerScreen = ({ closeDrawer }: { closeDrawer: () => void }) => {
             key={index}
             style={styles.menuItem}
             onPress={() => {
-              // 🔄 UPDATED: Handle Home screen separately
               if (item.route === 'HomeScreen') {
-                closeDrawer(); // ✅ Just close if already on Home
+                closeDrawer(); 
               } else if (item.route) {
                 navigation.navigate(item.route as never);
-                closeDrawer(); // ✅ Close drawer after navigating
+                closeDrawer(); 
               }
             }}
           >

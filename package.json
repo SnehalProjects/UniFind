@@ -29,6 +29,7 @@
     "lucide-react-native": "^0.517.0",
     "react": "19.1.0",
     "react-native": "0.80.0",
+    "react-native-dialog": "^9.3.0",
     "react-native-dropdown-picker": "^5.4.6",
     "react-native-gesture-handler": "^2.26.0",
     "react-native-image-picker": "^8.2.1",
