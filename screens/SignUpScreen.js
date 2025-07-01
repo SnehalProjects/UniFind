@@ -226,7 +226,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: 'Black',
     fontWeight: '900',
-    fontFamily:'serif',
     marginBottom: 20,
   },
   header:{

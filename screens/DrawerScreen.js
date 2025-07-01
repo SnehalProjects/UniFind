@@ -1,4 +1,3 @@
-// screens/DrawerScreen.tsx
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -6,8 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  ScrollView,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import auth from '@react-native-firebase/auth';
@@ -15,8 +14,9 @@ import firestore from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
-// ✅ NEW: Accept closeDrawer prop
-const DrawerScreen = ({ closeDrawer })=> {
+const screenWidth = Dimensions.get('window').width;
+
+const DrawerScreen = ({ closeDrawer }) => {
   const navigation = useNavigation();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,15 +43,14 @@ const DrawerScreen = ({ closeDrawer })=> {
 
   const handleLogout = async () => {
     await auth().signOut();
-    await GoogleSignin.signOut();  
+    await GoogleSignin.signOut();
     navigation.navigate('LoginScreen');
-    closeDrawer(); // ✅ NEW: Close drawer on logout
+    closeDrawer();
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>My Profile</Text>
-
+    <View style={styles.container}>
+      {/* Profile Section */}
       <View style={styles.profileSection}>
         {loading ? (
           <ActivityIndicator size="small" />
@@ -65,106 +64,173 @@ const DrawerScreen = ({ closeDrawer })=> {
             style={styles.profileImage}
           />
         )}
-        <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>{userData?.name || 'Loading...'}</Text>
-          <Text style={styles.profileEmail}>{userData?.email || 'Loading...'}</Text>
+        <View style={styles.profileTextContainer}>
+          <Text style={styles.profileName}>{userData?.name || 'Demo Student'}</Text>
+          <View style={styles.profileRow}>
+            <Icon name="mail-outline" size={15} color="#6b7280" style={styles.profileIcon} />
+            <Text style={styles.profileEmail}>{userData?.email || 'demo.student@charusat.edu.in'}</Text>
+          </View>
+          <View style={styles.profileRow}>
+            <Icon name="school-outline" size={15} color="#6b7280" style={styles.profileIcon} />
+            <Text style={styles.profileCollege}>{userData?.college || 'Charusat University'}</Text>
+          </View>
         </View>
       </View>
 
+      <View>
+      <Text style={styles.navTitle}>NAVIGATION</Text>
       <View style={styles.menuSection}>
         {[
           { icon: 'home-outline', label: 'Home', route: 'HomeScreen' },
-          { icon: 'download-outline', label: 'My Posts' },
-          { icon: 'heart-outline', label: 'Personal Details', route: 'ProfileScreen' },
-          { icon: 'settings-outline', label: 'Settings' ,route: 'SettingScreen'},
+          { icon: 'person-outline', label: 'My Profile', route: 'ProfileScreen' },
+          { icon: 'document-text-outline', label: 'My Posts' },
+          { icon: 'settings-outline', label: 'Settings', route: 'SettingScreen' },
         ].map((item, index) => (
           <TouchableOpacity
             key={index}
             style={styles.menuItem}
             onPress={() => {
-              // 🔄 UPDATED: Handle Home screen separately
-              if (item.route === 'HomeScreen') {
-                closeDrawer(); // ✅ Just close if already on Home
-              } else if (item.route) {
+              if (item.route) {
                 navigation.navigate(item.route);
-                closeDrawer(); // ✅ Close drawer after navigating
               }
+              closeDrawer();
             }}
           >
-            <Icon name={item.icon} size={22} color="#374151" style={styles.menuIcon} />
+            <View style={styles.iconCircle}>
+              <Icon name={item.icon} size={20} color="#374151" />
+            </View>
             <Text style={styles.menuText}>{item.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
+      </View>
 
+      <View>
+      <Text style={styles.abtTitle}>ABOUT</Text>
+      <View style={styles.aboutBox}>
+        <Text style={styles.aboutTitle}>CampusFind</Text>
+        <Text style={styles.aboutSub}>Version 1.0.0</Text>
+        <Text style={styles.aboutSub}>University Lost & Found Platform</Text>
+      </View>
+      </View>
+
+      {/* Logout */}
       <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-        <Icon name="log-out-outline" size={22} color="#ef4444" />
-        <Text style={styles.logoutText}>Log Out</Text>
+        <Icon name="log-out-outline" size={20} color="#ef4444" />
+        <Text style={styles.logoutText}>Sign Out</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: screenWidth * 0.06,
     backgroundColor: '#fff',
-    padding: 16,
-  },
-  header: {
-    fontSize: 22,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 20,
+    justifyContent: 'space-between',
   },
   profileSection: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 30,
+    marginTop: 10,
   },
   profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 10,
+    width: 58,
+    height: 58,
+    borderRadius: 32,
+    backgroundColor: '#ccc',
   },
-  profileInfo: {
-    alignItems: 'center',
+  profileTextContainer: {
+    marginLeft: 14,
+    flex: 1,
+    justifyContent: 'center',
   },
   profileName: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  profileIcon: {
+    marginRight: 6,
   },
   profileEmail: {
+    fontSize: 13,
     color: '#6b7280',
   },
+  profileCollege: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  navTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#9ca3af',
+  },
+  abtTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    marginTop: 89,
+    color: '#9ca3af',
+  },
   menuSection: {
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#e5e7eb',
-    paddingVertical: 10,
+    gap: 10,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
-  menuIcon: {
-    marginRight: 16,
+  iconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
   menuText: {
-    fontSize: 16,
+    fontSize: 16.5,
     color: '#111827',
+  },
+  aboutBox: {
+    backgroundColor: '#f9fafb',
+    borderWidth:1,
+    borderRadius: 10,
+    borderColor: '#dde1ea',
+    padding: 20,
+  },
+  aboutTitle: {
+    fontWeight: 'bold',
+    color: '#111827',
+    fontSize: 17,
+  },
+  aboutSub: {
+    fontSize: 13,
+    padding:3,
+    color: '#6b7280',
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    borderWidth:1,
+    borderColor: '#fee2e2',
+    backgroundColor: '#fef2f2',
+    paddingVertical: 13,
+    borderRadius: 10,
     justifyContent: 'center',
-    marginTop: 30,
   },
   logoutText: {
     color: '#ef4444',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     marginLeft: 8,
   },

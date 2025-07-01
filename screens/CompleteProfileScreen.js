@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     textAlign: 'center', 
     marginBottom: 40,
     marginTop:30, 
-    fontFamily: 'serif' 
+    color:'#374151'
   },
   input: {
     height:45,
