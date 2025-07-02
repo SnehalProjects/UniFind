@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import firestore from '@react-native-firebase/firestore';
-import { useNavigation } from '@react-navigation/native';
-import { DrawerNavigationProp } from '@react-navigation/drawer';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import DrawerModal from '../screens/DrawerModal'
+import auth from '@react-native-firebase/auth';
 
 const { width } = Dimensions.get('window');
 
@@ -21,7 +21,29 @@ const HomeScreen = () => {
   const navigation = useNavigation();
   const [recentPosts, setRecentPosts] = useState([]);
   const [isDrawerVisible, setDrawerVisible] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
+useFocusEffect(
+    useCallback(() => {
+      const fetchProfileImage = async () => {
+        const user = auth().currentUser;
+        if (!user) return;
+
+        try {
+          const doc = await firestore().collection('users').doc(user.uid).get();
+          if (doc.exists) {
+            const data = doc.data();
+            setProfileImage(data?.profileImage || null);
+          }
+        } catch (err) {
+          console.error('Failed to fetch profile image:', err);
+        }
+      };
+
+      fetchProfileImage();
+    }, [])
+  );
 
   useEffect(() => {
     const unsubscribe = firestore()
@@ -36,19 +58,28 @@ const HomeScreen = () => {
         setRecentPosts(items);
       });
 
-    return () => unsubscribe();
+    return () => unsubscribe(); 
   }, []);
+
+  // Filter posts based on search query (case-insensitive)
+  const filteredPosts = recentPosts.filter(item =>
+    item.itemName?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => setDrawerVisible(true)}>
-          <Ionicons name="menu" size={30} color={'#333'} />
+          <Ionicons name="menu" size={32} color={'#333'} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => {}}>
+        <TouchableOpacity onPress={() => navigation.navigate('ProfileScreen')}>
           <Image
-            source={require('../assets/Images/profile.png')}
+            source={{
+              uri:
+                profileImage ||
+                'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
+            }}
             style={styles.profile}
           />
         </TouchableOpacity>
@@ -64,6 +95,8 @@ const HomeScreen = () => {
           placeholder="search here"
           placeholderTextColor="#999"
           style={styles.searchInput}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
         />
       </View>
       <View>
@@ -74,35 +107,37 @@ const HomeScreen = () => {
         {/* Lost / Found Buttons */}
         <View style={styles.cardRow}>
           <TouchableOpacity
-            style={styles.imageCard}
+            style={styles.categoryCardLost}
+            activeOpacity={0.85}
             onPress={() => navigation.navigate('LostItems')}
           >
-            <Image
-              source={require('../assets/Images/lost.png')}
-              style={styles.cardImage}
-            />
-            <View style={styles.categoryOverlay}>
-                  <Text style={styles.categoryTitle}>Lost Items</Text>
-              </View>
+            <View style={styles.categoryIconCircleLost}>
+              <Image
+                source={require('../assets/Images/lost.png')}
+                style={styles.categoryIconImage}
+              />
+            </View>
+            <Text style={styles.categoryTitleNew}>Lost Items</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.imageCard}
+            style={styles.categoryCardFound}
+            activeOpacity={0.85}
             onPress={() => navigation.navigate('FoundItems')}
           >
-            <Image
-              source={require('../assets/Images/found.png')}
-              style={styles.cardImage}
-            />
-            <View style={styles.categoryOverlay}>
-                  <Text style={styles.categoryTitle}>Found Items</Text>
-              </View>
+            <View style={styles.categoryIconCircleFound}>
+              <Image
+                source={require('../assets/Images/found.png')}
+                style={styles.categoryIconImage}
+              />
+            </View>
+            <Text style={styles.categoryTitleNew}>Found Items</Text>
           </TouchableOpacity>
         </View>
 
         {/* Recent Posts */}
         <Text style={styles.sectionTitle}>Recent Posts</Text>
         <View style={styles.cardRowWrap}>
-          {recentPosts.length === 0 ? (
+          {filteredPosts.length === 0 ? (
             <View style={styles.noPostsContainer}>
               <Text style={styles.noPostsTitle}>No posts found</Text>
               <Text style={styles.noPostsSubtitle}>
@@ -111,7 +146,7 @@ const HomeScreen = () => {
             </View>
           ) : (
             <View style={styles.cardRowWrap}>
-              {recentPosts.map((item, index) => (
+              {filteredPosts.map((item, index) => (
                 <TouchableOpacity
       key={item.id}
       onPress={() => navigation.navigate('ItemDetail', { item })}
@@ -169,7 +204,7 @@ const styles = StyleSheet.create({
   },
   profile: {
     height: 40,
-    width: 40,
+    width: 40, 
     borderRadius: 20,
   },
   title: {
@@ -215,31 +250,64 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  imageCard: {
-    width: (width - 60) / 2,
-    height: 130,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 12,
-    borderTopRightRadius:12,
-    justifyContent: 'flex-start',
+  categoryCardLost: {
+    flex: 1,
+    backgroundColor: '#e5ebff', // soft purple
+    borderRadius: 18,
+    marginRight: 10,
     alignItems: 'center',
-    padding: 10,
-    elevation: 3,
+    paddingVertical: 18,
+    elevation: 5,
+    shadowColor: '#a5b4fc',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
   },
-  cardImage: {
-    width: 80,
-    height: 80,
+  categoryCardFound: {
+    flex: 1,
+    backgroundColor: '#e5ebff', // pastel light green
+    borderRadius: 18,
+    marginLeft: 10,
+    alignItems: 'center',
+    paddingVertical: 18,
+    elevation: 5,
+    shadowColor: '#a7f3d0',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+  },
+  categoryIconCircleLost: {
+    backgroundColor: '#c7d2fe', // lighter purple
+    borderRadius: 32,
+    width: 64,
+    height: 64,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+    elevation: 2,
+  },
+  categoryIconCircleFound: {
+    backgroundColor: '#c7d2fe', // lighter pastel green
+    borderRadius: 32,
+    width: 64,
+    height: 64,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+    elevation: 2,
+  },
+  categoryIconImage: {
+    width: 40,
+    height: 40,
     resizeMode: 'contain',
   },
-   categoryOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    padding: 5,
+  categoryTitleNew: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#374151',
+    letterSpacing: 0.5,
+    marginTop: 2,
   },
-  categoryTitle: { fontSize: 15, fontWeight: '700', color: '#ffffff', marginBottom: 4 },
   postCard: {
     width: (width - 60) / 2,
     backgroundColor: '#fff',

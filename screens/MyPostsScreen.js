@@ -93,7 +93,7 @@ const renderItem = ({ item }) => (
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={28} color="#222" />
+          <Ionicons name="chevron-back" size={28} color="#374151" />
         </TouchableOpacity>
         <View>
           <Text style={styles.headerTitle}>My Posts</Text>
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#222',
+    color: '#374151',
   },
   headerSubtitle: {
     fontSize: 14,

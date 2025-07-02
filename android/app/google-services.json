@@ -12,7 +12,20 @@
           "package_name": "com.lostfound.unifind"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "21704621494-5glf9s9116o16up820lblb6atms802g4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.lostfound.unifind",
+            "certificate_hash": "4d39eb9585aea79998b8a9630f5b25c79c1cf7f1"
+          }
+        },
+        {
+          "client_id": "21704621494-fbocvhcr2osirbd0vaj6mj1po1qhhfju.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC7_n0GGyXPHE0kicfFsm9HPvnspjL8Th8"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "21704621494-fbocvhcr2osirbd0vaj6mj1po1qhhfju.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

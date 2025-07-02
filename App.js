@@ -11,8 +11,21 @@ import ItemDetailScreen from './screens/ItemDetailScreen';
 import LoginScreen from './screens/LoginScreen';
 import SignUpScreen from './screens/SignUpScreen';
 import ProfileScreen from './screens/ProfileScreen';
-import DrawerScreen from './screens/DrawerScreen';
+import DrawerScreen from './screens/DrawerScreen.js';
 import MyPostsScreen from './screens/MyPostsScreen';
+import SettingScreen from './screens/SettingScreen';
+import CompleteProfileScreen from './screens/CompleteProfileScreen';
+
+import { LogBox } from 'react-native';
+
+// Ignore all log notifications:
+LogBox.ignoreAllLogs();
+
+// OR: Ignore specific warnings
+LogBox.ignoreLogs([
+  'Warning: ...', // exact warning string
+  'AsyncStorage has been extracted from react-native core',
+]);
 
 const Stack = createNativeStackNavigator();
 
@@ -20,7 +33,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="LoginScreen"screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="HomeScreen" component={HomeScreen} />
         <Stack.Screen name="PostItem" component={PostItemScreen} />
         <Stack.Screen name="LostItems" component={LostItemsScreen} />
         <Stack.Screen name="FoundItems" component={FoundItemsScreen} />
@@ -29,8 +42,9 @@ export default function App() {
         <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
         <Stack.Screen name="DrawerScreen" component={DrawerScreen} />
+        <Stack.Screen name="SettingScreen" component={SettingScreen} />
         <Stack.Screen name="MyPostsScreen" component={MyPostsScreen} />
-
+        <Stack.Screen name="CompleteProfileScreen" component={CompleteProfileScreen} />
       </Stack.Navigator>
       <Toast />
     </NavigationContainer>

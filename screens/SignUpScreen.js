@@ -28,44 +28,50 @@ const SignUpScreen = () => {
   const [selectedSem, setSelectedSem] = useState('');
 
   const onRegister = async () => {
-    if (!email || !password || !name || !course || !contact || !selectedCollege || !selectedSem) {
-      Alert.alert('Please fill in all fields');
-      return;
-    }
+  if (!email || !password || !name || !course || !contact || !selectedCollege || !selectedSem) {
+    Alert.alert('Please fill in all fields');
+    return;
+  }
 
-    if (!email.endsWith('@charusat.edu.in')) {
+  if (!email.endsWith('@charusat.edu.in')) {
     Alert.alert('Invalid Email', 'Register with CHARUSAT email Id only.');
     return;
   }
 
-    try {
-      const userCredential = await auth().createUserWithEmailAndPassword(email, password);
-      const uid = userCredential.user.uid;
+  try {
+    const userCredential = await auth().createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
 
-      await firestore().collection('users').doc(uid).set({
-        name,
-        email,
-        course,
-        contact,
-        college: selectedCollege,
-        semester: selectedSem,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-        profileImage: '',
-      });
+    await firestore().collection('users').doc(user.uid).set({
+      name,
+      email,
+      course,
+      contact,
+      college: selectedCollege,
+      semester: selectedSem,
+      createdAt: firestore.FieldValue.serverTimestamp(),
+      profileImage: '',
+    });
 
-      Alert.alert('Success', 'User account created !');
-      navigation.navigate('LoginScreen' as never); 
-      } 
-      catch (err: any) {
-      if (err.code === 'auth/email-already-in-use') {
-        Alert.alert('That email address is already in use!');
-      } else if (err.code === 'auth/invalid-email') {
-        Alert.alert('That email address is invalid!');
-      } else {
-        Alert.alert('Error', err.message);
-      }
+    await user.sendEmailVerification();
+
+    Alert.alert(
+      'Verify Email',
+      'A verification email has been sent. Please verify your email before logging in.'
+    );
+
+    navigation.navigate('LoginScreen');
+  } catch (err) {
+    if (err.code === 'auth/email-already-in-use') {
+      Alert.alert('That email address is already in use!');
+    } else if (err.code === 'auth/invalid-email') {
+      Alert.alert('That email address is invalid!');
+    } else {
+      Alert.alert('Error', err.message);
     }
-  };
+  }
+};
+
 
   return (
     <View style={styles.container}>
@@ -84,7 +90,11 @@ const SignUpScreen = () => {
       <Picker
         selectedValue={selectedCollege}
         onValueChange={itemValue => setSelectedCollege(itemValue)}
-        style={styles.picker}
+        style={[
+          styles.picker,
+          { color: selectedCollege === '' ? '#7f89b0' : 'black' } // Conditional color
+        ]}
+        dropdownIconColor="#7f89b0"
       >
         <Picker.Item label="Select Collage" value="" />
         {colleges.map((college, index) => (
@@ -97,7 +107,11 @@ const SignUpScreen = () => {
       <Picker
         selectedValue={selectedSem}
         onValueChange={itemValue => setSelectedSem(itemValue)}
-        style={styles.picker}
+        style={[
+        styles.picker,
+        { color: selectedSem === '' ? '#7f89b0' : 'black' } // Conditional color
+      ]}
+        dropdownIconColor="#7f89b0"
       >
         <Picker.Item label="Select Semester" value="" />
         {semesters.map((sem, index) => (
@@ -124,7 +138,7 @@ const SignUpScreen = () => {
       />
 
       <TextInput
-        placeholder="Email"
+         placeholder="user@charusat.edu.in"
         placeholderTextColor={'#7f89b0'}
         style={styles.inputBox}
         value={email}
@@ -150,7 +164,7 @@ const SignUpScreen = () => {
 
       <View style={{flexDirection:'row',alignItems:'center'}}>
        <Text style={styles.alreadyText}>Already have an account ?    </Text>
-       <TouchableOpacity onPress={() => navigation.navigate('LoginScreen' as never)}>
+       <TouchableOpacity onPress={() => navigation.navigate('LoginScreen')}>
         <Text style={styles.link}>Login</Text>
       </TouchableOpacity>
       </View>
@@ -194,8 +208,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   picker: {
-    color: '#7f89b0',
-    fontSize: 16,
+    color: 'Black',
   },
   register: {
     width: '90%',
@@ -214,7 +227,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: 'Black',
     fontWeight: '900',
-    fontFamily:'serif',
     marginBottom: 20,
   },
   header:{
@@ -251,4 +263,4 @@ const styles = StyleSheet.create({
 
 });
 
-export default SignUpScreen;
+export default SignUpScreen;

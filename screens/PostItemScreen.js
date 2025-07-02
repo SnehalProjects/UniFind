@@ -14,16 +14,16 @@ import firestore, { firebase } from '@react-native-firebase/firestore';
 import {
   launchCamera,
   launchImageLibrary,
-  ImagePickerResponse,
 } from 'react-native-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Toast from 'react-native-toast-message';
 import NetInfo from '@react-native-community/netinfo';
+import { useNavigation } from '@react-navigation/native';
 
 const IMGBB_API_KEY = '0c8654c65866f2d583a13f9cd54da770'; 
 
-const uploadImageToImgbb = async (imageUri: string): Promise<string | null> => {
+const uploadImageToImgbb = async (imageUri) => {
   const formData = new FormData();
 
   formData.append('image', {
@@ -53,8 +53,9 @@ const uploadImageToImgbb = async (imageUri: string): Promise<string | null> => {
 
 
 const PostItemScreen = () => {
+  const navigation = useNavigation();
   const [itemType, setItemType] = useState('Lost');
-  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [imageUri, setImageUri] = useState(null);
   const [itemName, setItemName] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
@@ -178,7 +179,12 @@ const handleSubmit = async () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Post Item</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 8 }}>
+          <Icon name="chevron-back" size={28} color="#4B6CB7" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Post Item</Text>
+      </View>
       <Text style={styles.subtitle}>Help reunite items with their owners</Text>
 
       <View style={styles.toggleContainer}>
@@ -314,6 +320,7 @@ const handleSubmit = async () => {
             setShowDatePicker(Platform.OS === 'ios');
             if (selectedDate) setDate(selectedDate);
           }}
+          maximumDate={new Date()}
         />
       )}
 

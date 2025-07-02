@@ -6,35 +6,125 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-  import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [secure, setSecure] = useState(true); // 🔐 toggle visibility
+  const [secure, setSecure] = useState(true);
   const navigation = useNavigation();
 
-  const onLogin = async () => {
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: '21704621494-fbocvhcr2osirbd0vaj6mj1po1qhhfju.apps.googleusercontent.com',
+      forceCodeForRefreshToken: true,
+      hostedDomain: 'charusat.edu.in',
+    });
+  }, []);
+
+  const onGoogleButtonPress = async () => {
+  try {
+    // Sign out from Google to force account selection
+    await GoogleSignin.signOut();
+
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    const userInfo = await GoogleSignin.signIn();
+    if (!userInfo) throw new Error('Google Sign-In failed or was cancelled');
+
+    const { idToken } = await GoogleSignin.getTokens();
+    if (!idToken) throw new Error('No ID token returned from Google');
+
+    const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+    const userCredential = await auth().signInWithCredential(googleCredential);
+    const user = userCredential.user;
+
+    if (!user) throw new Error('Firebase user not found after Google Sign-In');
+
+    const uid = user.uid;
+    const userDoc = await firestore().collection('users').doc(uid).get();
+
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+
+      if (!userData?.course || !userData?.college || !userData?.semester) {
+        Alert.alert('Complete Profile', 'Please finish setting up your profile.');
+        navigation.navigate('CompleteProfileScreen');
+      } else {
+        navigation.navigate('HomeScreen');
+      }
+    } else {
+      await firestore().collection('users').doc(uid).set({
+        name: user.displayName || '',
+        email: user.email || '',
+        profileImage: user.photoURL || '',
+        course: '',
+        contact: '',
+        college: '',
+        semester: '',
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      });
+
+      Alert.alert('Almost there!', 'Please complete your profile.');
+      navigation.navigate('CompleteProfileScreen');
+    }
+  } catch (error) {
+    if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+      // User cancelled the login flow — no need to show error
+      return;
+    }
+
+    // Optional: show an alert for unexpected errors only
+    Alert.alert('Login Failed', 'An unexpected error occurred. Please try again.');
+    // console.error('[Google Sign-In Error]', error); // You can keep this in development if needed
+  }
+};
+
+    const onLogin = async () => {
     if (!email || !password) {
       Alert.alert('Please enter email and password');
       return;
     }
 
     if (!email.endsWith('@charusat.edu.in')) {
-    Alert.alert('Invalid Email', 'Login with your CHARUSAT email ID.');
-    return;
-  }
+      Alert.alert('Invalid Email', 'Login with your CHARUSAT email ID.');
+      return;
+    }
 
     try {
-      await auth().signInWithEmailAndPassword(email, password);
-      Alert.alert('Success', 'Logged in successfully!');
-      navigation.navigate('Home' as never)
+      const userCredential = await auth().signInWithEmailAndPassword(email, password);
+      const user = userCredential.user;
 
-    } catch (err: any) {
+      if (!user.emailVerified) {
+        Alert.alert(
+          'Email Not Verified',
+          'Please verify your email before logging in. Check your inbox or spam folder.',
+          [
+            {
+              text: 'Resend Email',
+              onPress: async () => {
+                await user.sendEmailVerification();
+                Alert.alert('Verification email resent');
+              }
+            },
+            {
+              text: 'OK',
+              onPress: () => {}
+            }
+          ]
+        );
+
+        await auth().signOut();
+        return;
+      }
+
+      Alert.alert('Success', 'Logged in successfully!');
+      navigation.navigate('HomeScreen');
+    } catch (err) {
       if (err.code === 'auth/user-not-found') {
         Alert.alert('No user found with that email!');
       } else if (err.code === 'auth/wrong-password') {
@@ -66,7 +156,7 @@ const LoginScreen = () => {
       <Text style={styles.header}>Login to continue your learning journey</Text>
 
       <TextInput
-        placeholder="Email"
+         placeholder="user@charusat.edu.in"
         placeholderTextColor="#7f89b0"
         style={styles.inputBox}
         value={email}
@@ -84,7 +174,7 @@ const LoginScreen = () => {
           secureTextEntry={secure}
         />
         <TouchableOpacity onPress={() => setSecure(!secure)} style={styles.eyeIcon}>
-          <FontAwesome name={secure ? 'eye-slash' : 'eye'} size={22} color="#7f89b0" />
+          <FontAwesome name={secure ? 'eye' : 'eye-slash'} size={18} color="#7f89b0" />
         </TouchableOpacity>
       </View>
 
@@ -96,13 +186,13 @@ const LoginScreen = () => {
         <Text style={styles.forgot}>Forgot Password?</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.googleBtn}>
+      <TouchableOpacity style={styles.googleBtn} onPress={onGoogleButtonPress}>
         <Text style={styles.googleText}>Continue with Google</Text>
       </TouchableOpacity>
 
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <Text style={styles.alreadyText}>Don't have an account? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('SignUpScreen' as never)}>
+        <TouchableOpacity onPress={() => navigation.navigate('SignUpScreen')}>
           <Text style={styles.link}>Register Now</Text>
         </TouchableOpacity>
       </View>
@@ -171,7 +261,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: 'black',
     fontWeight: '900',
-    fontFamily: 'serif',
     marginBottom: 20,
   },
   header: {
@@ -211,4 +300,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LoginScreen;
+export default LoginScreen;

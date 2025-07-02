@@ -13,6 +13,7 @@ import firestore from '@react-native-firebase/firestore';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import auth from '@react-native-firebase/auth';
 import Dialog from 'react-native-dialog';
+import { useNavigation } from '@react-navigation/native';
 
 const ItemDetailScreen = ({ route }) => {
   const { item } = route.params;
@@ -22,6 +23,7 @@ const ItemDetailScreen = ({ route }) => {
   const [claimEmail, setClaimEmail] = useState('');
   const currentUserEmail = auth().currentUser?.email;
   const [claimedUserData, setClaimedUserData] = useState(null);
+  const navigation = useNavigation();
 
   useEffect(() => {
     const fetchPoster = async () => {
@@ -101,6 +103,12 @@ const ItemDetailScreen = ({ route }) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.imageContainer}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ position: 'absolute', top: 18, left: 16, zIndex: 10, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 20, padding: 2 }}
+        >
+          <Ionicons name="chevron-back" size={28} color="#374151" />
+        </TouchableOpacity>
         {item.imageUrl ? (
           <Image source={{ uri: item.imageUrl }} style={styles.image} />
         ) : (
@@ -109,7 +117,7 @@ const ItemDetailScreen = ({ route }) => {
           </View>
         )}
         <View
-          style={[
+          style={[ 
             styles.badge,
             item.itemType === 'Lost' ? styles.lostBadge : styles.foundBadge,
           ]}
@@ -331,7 +339,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     marginTop: -14,
-    elevation: 3,
+    elevation: 4,
   },
   itemName: {
     fontSize: 24,
