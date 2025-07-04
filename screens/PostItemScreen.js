@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Image,
   Platform,
-  Alert,
 } from 'react-native';
 import firestore, { firebase } from '@react-native-firebase/firestore';
 import {
