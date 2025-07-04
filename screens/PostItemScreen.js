@@ -14,14 +14,15 @@ import firestore, { firebase } from '@react-native-firebase/firestore';
 import {
   launchCamera,
   launchImageLibrary,
-  ImagePickerResponse,
 } from 'react-native-image-picker';
+import auth from '@react-native-firebase/auth';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Toast from 'react-native-toast-message';
 import NetInfo from '@react-native-community/netinfo';
+import { useNavigation } from '@react-navigation/native';
 
-const IMGBB_API_KEY = 'c0d620761e1a43633b65a8deec759687'; 
+const IMGBB_API_KEY = '0c8654c65866f2d583a13f9cd54da770'; 
 
 const uploadImageToImgbb = async (imageUri) => {
   const formData = new FormData();
@@ -51,7 +52,9 @@ const uploadImageToImgbb = async (imageUri) => {
   }
 };
 
+
 const PostItemScreen = () => {
+  const navigation = useNavigation();
   const [itemType, setItemType] = useState('Lost');
   const [imageUri, setImageUri] = useState(null);
   const [itemName, setItemName] = useState('');
@@ -61,6 +64,26 @@ const PostItemScreen = () => {
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [email, setEmail] = useState('');
+
+  useState(() => {
+  const fetchUserEmail = async () => {
+    const currentUser = auth().currentUser;
+    if (!currentUser) return;
+
+    try {
+      const doc = await firestore().collection('users').doc(currentUser.uid).get();
+      if (doc.exists) {
+        const userData = doc.data();
+        setEmail(userData.email || '');
+      }
+    } catch (error) {
+      console.error('Failed to fetch user email:', error);
+    }
+  };
+
+  fetchUserEmail();
+}, []);
+
 
   const pickImage = () => {
     launchImageLibrary({ mediaType: 'photo' }, response => {
@@ -142,9 +165,10 @@ const handleSubmit = async () => {
       description,
       location,
       date: date.toISOString(),
-      email,
+      email: email.trim().toLowerCase(),
       imageUrl,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      status: 'Active'
     });
 
     Toast.show({
@@ -172,9 +196,16 @@ const handleSubmit = async () => {
   }
 };
 
+
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Post Item</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 8 }}>
+          <Icon name="chevron-back" size={28} color="#4B6CB7" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Post Item</Text>
+      </View>
       <Text style={styles.subtitle}>Help reunite items with their owners</Text>
 
       <View style={styles.toggleContainer}>
@@ -218,12 +249,12 @@ const handleSubmit = async () => {
               onPress={() => setImageUri(null)}
               style={styles.removeImageIcon}
             >
-              <Icon name="close-circle" size={24} color="#fff" />
+              <Icon name="close-circle" size={24} color="#999" />
             </TouchableOpacity>
           </>
         ) : (
           <TouchableOpacity onPress={pickImage}>
-            <Text style={styles.imagePickerText}>Add Photo * </Text>
+            <Text style={styles.imagePickerText}>Add Photo </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -310,6 +341,7 @@ const handleSubmit = async () => {
             setShowDatePicker(Platform.OS === 'ios');
             if (selectedDate) setDate(selectedDate);
           }}
+          maximumDate={new Date()}
         />
       )}
 
@@ -317,13 +349,14 @@ const handleSubmit = async () => {
         <Icon name="mail-outline" size={18} color="#444" />
         <Text style={styles.labelText}>Contact Email *</Text>
       </View>
+
       <TextInput
         style={styles.input}
-        placeholder="user@charusat.edu.in"
-        placeholderTextColor="#A3AAB8"
         value={email}
-        keyboardType="email-address"
-        onChangeText={setEmail}
+        editable={false} // Disable editing
+        selectTextOnFocus={false}
+        placeholder="Email loading..."
+        placeholderTextColor="#A3AAB8"
       />
 
       <TouchableOpacity style={styles.postButton} onPress={handleSubmit}>

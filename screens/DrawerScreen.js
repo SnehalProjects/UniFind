@@ -83,7 +83,7 @@ const DrawerScreen = ({ closeDrawer }) => {
         {[
           { icon: 'home-outline', label: 'Home', route: 'HomeScreen' },
           { icon: 'person-outline', label: 'My Profile', route: 'ProfileScreen' },
-          { icon: 'document-text-outline', label: 'My Posts' },
+          { icon: 'document-text-outline', label: 'My Posts', route: 'MyPostsScreen' },
           { icon: 'settings-outline', label: 'Settings', route: 'SettingScreen' },
         ].map((item, index) => (
           <TouchableOpacity
@@ -110,7 +110,7 @@ const DrawerScreen = ({ closeDrawer }) => {
       <View style={styles.aboutBox}>
         <Text style={styles.aboutTitle}>CampusFind</Text>
         <Text style={styles.aboutSub}>Version 1.0.0</Text>
-        <Text style={styles.aboutSub}>University Lost & Found Platform</Text>
+        <Text style={styles.aboutSub}>Campus Lost & Found Platform</Text>
       </View>
       </View>
 
@@ -136,9 +136,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   profileImage: {
-    width: 58,
-    height: 58,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 33,
     backgroundColor: '#ccc',
   },
   profileTextContainer: {

@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: wp('6.5%'),
     fontWeight: 'bold',
-    marginLeft: hp('10.9%'),
+    marginLeft: hp('1%'),
     color: '#374151',
   },
   imageContainer: { alignItems: 'center', marginBottom: hp('2.5%') },
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   infoBox: {
     backgroundColor: '#f5f7fb',
     borderRadius: 10,
-    padding: wp('4%'),
+    padding: wp('3.5%'),
     marginBottom: hp('1.5%'),
   },
   label: { fontSize: wp('3.5%'), color: '#4b5563', fontWeight: '600' },
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4b6cb7',
     borderRadius: 30,
     padding: wp('3%'),
-    marginTop: hp('2%'),
+    marginTop: hp('1%'),
     alignItems: 'center',
   },
   editText: { color: 'white', fontWeight: 'bold', fontSize: wp('4%') },

@@ -15,7 +15,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 const LostItemsScreen = () => {
   const navigation = useNavigation();
   const [lostItems, setLostItems] = useState([]);
-
+ 
   useEffect(() => {
     firestore()
       .collection('items')
@@ -34,20 +34,37 @@ const LostItemsScreen = () => {
   const renderItem = ({ item }) => (
     <TouchableOpacity
       onPress={() => navigation.navigate('ItemDetail', { item })}
+      activeOpacity={0.9}
     >
-      <View style={styles.card}>
-        {item.imageUrl ? (
-          <Image source={{ uri: item.imageUrl }} style={styles.image} />
-        ) : (
-          <View style={styles.imagePlaceholder}>
-            <Text style={{ color: '#999', textAlign: 'center', marginTop: 70 }}>
-              No Image
-            </Text>
+      <View style={styles.cardNew}>
+        {/* Top Row: Badge and Date */}
+        <View style={styles.topRow}>
+          <View style={styles.badgeLost}><Text style={styles.badgeText}>Lost</Text></View>
+          <Text style={styles.dateText}>{item.createdAt ? new Date(item.createdAt.seconds ? item.createdAt.seconds * 1000 : item.createdAt).toISOString().slice(0, 10) : ''}</Text>
+        </View>
+        {/* Image */}
+        <View style={styles.imageWrapper}>
+          {item.imageUrl ? (
+            <Image source={{ uri: item.imageUrl }} style={styles.cardImageNew} />
+          ) : (
+            <View style={styles.imagePlaceholderNew}>
+              <Text style={{ color: '#999', textAlign: 'center' }}>No Image</Text>
+            </View>
+          )}
+        </View>
+        {/* Info */}
+        <View style={styles.infoNew}>
+          <Text style={styles.itemNameNew}>{item.itemName}</Text>
+          <View style={styles.locationRow}>
+            <Ionicons name="location-outline" size={16} color="#888" style={{ marginRight: 4 }} />
+            <Text style={styles.locationText}>{item.location || 'Unknown'}</Text>
           </View>
-        )}
-        <View style={styles.info}>
-          <Text style={styles.title}>{item.itemName}</Text>
-          <Text style={styles.meta}>Posted by {item.email}</Text>
+          <View style={styles.bottomRow}>
+            <View style={styles.postedByRow}>
+              <Ionicons name="person-circle-outline" size={16} color="#888" style={{ marginRight: 4 }} />
+              <Text style={styles.metaNew}>Posted by <Text style={styles.emailBold}>{item.email}</Text></Text>
+            </View>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -56,6 +73,9 @@ const LostItemsScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 8 }}>
+          <Ionicons name="chevron-back" size={28} color="#d97706" />
+        </TouchableOpacity>
         <Ionicons name="search-outline" size={28} color={'#d97706'} />
         <Text style={styles.title}>Lost Items</Text>
       </View>
@@ -82,23 +102,104 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   title: { fontSize: 28, fontWeight: '700', color: '#374151', marginLeft: 12 },
   subtitle: { fontSize: 16, color: '#6b7280', marginBottom: 24 },
-  card: {
+  cardNew: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 18,
+    marginBottom: 22,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
+    shadowRadius: 6,
+    padding: 0,
     overflow: 'hidden',
-    marginBottom: 15,
-    elevation: 3,
   },
-  image: {
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingTop: 14,
+  },
+  badgeLost: {
+    backgroundColor: '#e0f7e9',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+    alignSelf: 'flex-start',
+  },
+  badgeText: {
+    color: '#22a06b',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  dateText: {
+    color: '#888',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  imageWrapper: {
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardImageNew: {
     width: '100%',
     height: 180,
+    borderRadius: 16,
   },
-  imagePlaceholder: {
+  imagePlaceholderNew: {
+    width: '100%',
     height: 180,
     backgroundColor: '#eee',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 16,
   },
-  info: { padding: 10 },
-  meta: { fontSize: 12, color: '#777' },
+  infoNew: {
+    padding: 16,
+  },
+  itemNameNew: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#374151',
+    marginBottom: 6,
+    textTransform: 'capitalize',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  locationText: {
+    fontSize: 15,
+    color: '#888',
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  metaNew: {
+    fontSize: 13,
+    color: '#777',
+  },
+  postedByRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  emailBold: {
+    fontWeight: 'bold',
+    color: '#888',
+    fontSize: 13,
+  },
+  deleteBtn: {
+    // removed
+  },
+  deleteText: {
+    // removed
+  },
 });
 
 export default LostItemsScreen;

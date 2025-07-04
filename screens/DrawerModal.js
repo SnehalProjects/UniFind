@@ -10,7 +10,7 @@ import {
 import DrawerScreen from '../screens/DrawerScreen';
 
 const { width } = Dimensions.get('window');
-const drawerWidth = width * 0.73; // previously 0.7
+const drawerWidth = width * 0.83; // previously 0.7
 
 const DrawerModal = ({ visible, onClose }) => {
   const slideAnim = useRef(new Animated.Value(-drawerWidth)).current;
