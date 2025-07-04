@@ -5,6 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Image,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import auth from '@react-native-firebase/auth';
@@ -12,12 +15,14 @@ import firestore from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { KeyboardAvoidingView, Platform } from 'react-native';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secure, setSecure] = useState(true);
   const navigation = useNavigation();
+  const { width } = Dimensions.get('window');
 
   useEffect(() => {
     GoogleSignin.configure({
@@ -151,74 +156,163 @@ const LoginScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.signup}>Welcome Back</Text>
-      <Text style={styles.header}>Login to continue your learning journey</Text>
+    // <View style={styles.container}>
+    //   <Text style={styles.signup}>Welcome Back</Text>
+    //   <Text style={styles.header}>Login to continue your learning journey</Text>
 
-      <TextInput
-         placeholder="user@charusat.edu.in"
-        placeholderTextColor="#7f89b0"
-        style={styles.inputBox}
-        value={email}
-        onChangeText={value => setEmail(value)}
-        keyboardType="email-address"
-      />
+    //   <TextInput
+    //      placeholder="user@charusat.edu.in"
+    //     placeholderTextColor="#7f89b0"
+    //     style={styles.inputBox}
+    //     value={email}
+    //     onChangeText={value => setEmail(value)}
+    //     keyboardType="email-address"
+    //   />
 
-      <View style={styles.passwordContainer}>
-        <TextInput
-          placeholder="Password"
-          placeholderTextColor="#7f89b0"
-          style={styles.passwordInput}
-          value={password}
-          onChangeText={value => setPassword(value)}
-          secureTextEntry={secure}
+    //   <View style={styles.passwordContainer}>
+    //     <TextInput
+    //       placeholder="Password"
+    //       placeholderTextColor="#7f89b0"
+    //       style={styles.passwordInput}
+    //       value={password}
+    //       onChangeText={value => setPassword(value)}
+    //       secureTextEntry={secure}
+    //     />
+    //     <TouchableOpacity onPress={() => setSecure(!secure)} style={styles.eyeIcon}>
+    //       <FontAwesome name={secure ? 'eye' : 'eye-slash'} size={18} color="#7f89b0" />
+    //     </TouchableOpacity>
+    //   </View>
+
+    //   <TouchableOpacity onPress={onLogin} style={styles.login}>
+    //     <Text style={styles.registerTitle}>Login</Text>
+    //   </TouchableOpacity>
+
+    //   <TouchableOpacity onPress={onForgotPassword}>
+    //     <Text style={styles.forgot}>Forgot Password?</Text>
+    //   </TouchableOpacity>
+
+    //   <TouchableOpacity style={styles.googleBtn} onPress={onGoogleButtonPress}>
+    //     <Text style={styles.googleText}>Continue with Google</Text>
+    //   </TouchableOpacity>
+
+    //   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    //     <Text style={styles.alreadyText}>Don't have an account? </Text>
+    //     <TouchableOpacity onPress={() => navigation.navigate('SignUpScreen')}>
+    //       <Text style={styles.link}>Register Now</Text>
+    //     </TouchableOpacity>
+    //   </View>
+    // </View>
+    
+    <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+  >
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.card}>
+      <Text style={styles.title}>CampusFind</Text>
+
+        <Image
+          source={require('../assets/login.png')} // You can replace this image later
+          style={styles.logo}
+          resizeMode="contain"
         />
-        <TouchableOpacity onPress={() => setSecure(!secure)} style={styles.eyeIcon}>
-          <FontAwesome name={secure ? 'eye' : 'eye-slash'} size={18} color="#7f89b0" />
+
+        <TextInput
+          placeholder="example@charusat.edu.in"
+          placeholderTextColor="#7f89b0"
+          style={[styles.inputBox, { backgroundColor: '#fff' }]}
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoComplete="email"
+        />
+
+        <View style={styles.passwordContainer}>
+          <TextInput
+            placeholder="Enter your password"
+            placeholderTextColor="#7f89b0"
+            style={styles.passwordInput}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={secure}
+          />
+          <TouchableOpacity onPress={() => setSecure(!secure)} style={styles.eyeIcon}>
+            <FontAwesome name={secure ? 'eye-slash' : 'eye'} size={18} color="#7f89b0" />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity onPress={onForgotPassword}>
+          <Text style={styles.forgot}>Forgot password</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.login} onPress={onLogin}>
+          <Text style={styles.loginText}>Sign in</Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity onPress={onLogin} style={styles.login}>
-        <Text style={styles.registerTitle}>Login</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={onForgotPassword}>
-        <Text style={styles.forgot}>Forgot Password?</Text>
-      </TouchableOpacity>
+      <View style={styles.dividerContainer}>
+      <View style={styles.line} />
+      <Text style={styles.orText}>or</Text>
+      <View style={styles.line} />
+      </View>
 
       <TouchableOpacity style={styles.googleBtn} onPress={onGoogleButtonPress}>
-        <Text style={styles.googleText}>Continue with Google</Text>
+        <Text style={styles.googleText}>Google Sign in</Text>
       </TouchableOpacity>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Text style={styles.alreadyText}>Don't have an account? </Text>
+      <View style={styles.bottomRow}>
+        <Text style={styles.bottomText}>Don't have an account? </Text>
         <TouchableOpacity onPress={() => navigation.navigate('SignUpScreen')}>
-          <Text style={styles.link}>Register Now</Text>
+          <Text style={styles.registerLink}>Register</Text>
         </TouchableOpacity>
       </View>
-    </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
+  // 
   container: {
-    padding: 16,
+    flex: 1,
+    backgroundColor: '#cfd8ee',
     justifyContent: 'center',
     alignItems: 'center',
-    height: '100%',
-    backgroundColor: '#cfd8ee',
+    paddingHorizontal: 16,
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 30,
+    padding: 25,
+    width: '90%',
+    minHeight: 500,
+    alignItems: 'center',
+    elevation: 20,
+  },
+  logo: {
+    width: 170,
+    height: 170,
+  },
+  title: {
+    fontSize: 25,
+    fontWeight: 'bold',
+    color: '#5a6cb2',
+    marginBottom: 10,
   },
   inputBox: {
     borderWidth: 1,
     borderColor: '#7f89b0',
     backgroundColor: 'white',
     paddingHorizontal: 12,
-    borderRadius: 7,
-    width: '90%',
-    marginTop: 20,
-    shadowColor: '#4f46e5',
-    shadowOpacity: 0.1,
-    elevation: 8,
+    paddingVertical: 13,
+    borderRadius: 30,
+    width: '100%',
+    marginTop: 13,
   },
   passwordContainer: {
     flexDirection: 'row',
@@ -226,13 +320,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#7f89b0',
     backgroundColor: 'white',
-    borderRadius: 7,
+    borderRadius: 30,
     paddingHorizontal: 12,
-    width: '90%',
+    paddingVertical: 3,
+    width: '100%',
     marginTop: 20,
-    shadowColor: '#4f46e5',
-    shadowOpacity: 0.1,
-    elevation: 8,
   },
   passwordInput: {
     flex: 1,
@@ -241,63 +333,72 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     paddingHorizontal: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  login: {
-    width: '90%',
-    backgroundColor: '#4b6cb7',
-    padding: 12,
+  forgot: {
+    alignSelf: 'flex-end',
+    marginTop: 16,
+    color: '#4b6cb7',
+    fontSize: 14,
+  },
+login: {
+    width: '100%',
+    backgroundColor: '#5a6cb2',
+    padding: 14,
     borderRadius: 30,
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 25,
+    elevation: 10,
   },
-  registerTitle: {
+  loginText: {
     fontSize: 16,
     color: 'white',
     fontWeight: '600',
   },
-  signup: {
-    fontSize: 28,
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 30,
+    width: '82%',
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#6e7e91',
+  },
+  orText: {
+    marginHorizontal: 10,
+    fontWeight: '600',
     color: 'black',
-    fontWeight: '900',
-    marginBottom: 20,
-  },
-  header: {
-    margin: 10,
-    fontSize: 16,
-    color: '#64748b',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  forgot: {
-    alignSelf: 'flex-end',
-    marginTop: 10,
-    color: 'black',
-  },
-  alreadyText: {
-    marginTop: 10,
-  },
-  link: {
-    color: '#5a6cb2',
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginTop: 10,
-  },
+  },  
   googleBtn: {
     backgroundColor: '#fff',
-    borderColor: '#4285F4',
+    borderColor: '#5a6cb2',
     borderWidth: 1,
-    padding: 12,
+    padding: 14,
     borderRadius: 25,
-    width: '90%',
+    width: '88%',
     alignItems: 'center',
-    marginTop: 80,
+    marginTop: 30,
   },
   googleText: {
-    color: '#4285F4',
+    color: '#5a6cb2',
     fontWeight: '600',
+    fontSize: 16,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  bottomText: {
+    color: '#7f89b0',
+    fontSize: 15,
+  },
+  registerLink: {
+    color: '#4b6cb7',
+    fontWeight: 'bold',
+    fontSize: 18,
+    paddingLeft: 5,
   },
 });
-
-export default LoginScreen;
+export default LoginScreen;

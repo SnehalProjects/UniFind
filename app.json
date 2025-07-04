@@ -1,4 +1,12 @@
 {
   "name": "UniFind",
-  "displayName": "CampusFind"
+  "displayName": "CampusFind",
+  "expo": {
+    "scheme": "campusfind"
+  },
+  "react-native": {
+    "deepLinking": {
+      "schemes": ["campusfind"]
+    }
+  }
 }

@@ -1,21 +1,28 @@
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  Dimensions,
 } from 'react-native';
-import React, {useState} from 'react';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { Picker } from '@react-native-picker/picker';
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 
 const colleges = [
   'ARP', 'CMPICA', 'CSPIT', 'DEPSTAR', 'IIIM', 'MTIN', 'PDPIAS', 'RPCP'
 ];
 const semesters = ['1', '2', '3', '4', '5', '6', '7', '8'];
+
+const { width } = Dimensions.get('window');
 
 const SignUpScreen = () => {
   const navigation = useNavigation();
@@ -28,239 +35,264 @@ const SignUpScreen = () => {
   const [selectedSem, setSelectedSem] = useState('');
 
   const onRegister = async () => {
-  if (!email || !password || !name || !course || !contact || !selectedCollege || !selectedSem) {
-    Alert.alert('Please fill in all fields');
-    return;
-  }
-
-  if (!email.endsWith('@charusat.edu.in')) {
-    Alert.alert('Invalid Email', 'Register with CHARUSAT email Id only.');
-    return;
-  }
-
-  try {
-    const userCredential = await auth().createUserWithEmailAndPassword(email, password);
-    const user = userCredential.user;
-
-    await firestore().collection('users').doc(user.uid).set({
-      name,
-      email,
-      course,
-      contact,
-      college: selectedCollege,
-      semester: selectedSem,
-      createdAt: firestore.FieldValue.serverTimestamp(),
-      profileImage: '',
-    });
-
-    await user.sendEmailVerification();
-
-    Alert.alert(
-      'Verify Email',
-      'A verification email has been sent. Please verify your email before logging in.'
-    );
-
-    navigation.navigate('LoginScreen');
-  } catch (err) {
-    if (err.code === 'auth/email-already-in-use') {
-      Alert.alert('That email address is already in use!');
-    } else if (err.code === 'auth/invalid-email') {
-      Alert.alert('That email address is invalid!');
-    } else {
-      Alert.alert('Error', err.message);
+    if (!email || !password || !name || !course || !contact || !selectedCollege || !selectedSem) {
+      Alert.alert('Please fill in all fields');
+      return;
     }
-  }
-};
 
+    if (!email.endsWith('@charusat.edu.in')) {
+      Alert.alert('Invalid Email', 'Register with CHARUSAT email Id only.');
+      return;
+    }
+
+    try {
+      const userCredential = await auth().createUserWithEmailAndPassword(email, password);
+      const user = userCredential.user;
+
+      await firestore().collection('users').doc(user.uid).set({
+        name,
+        email,
+        course,
+        contact,
+        college: selectedCollege,
+        semester: selectedSem,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        profileImage: '',
+      });
+
+      await user.sendEmailVerification();
+
+      Alert.alert(
+        'Verify Email',
+        'A verification email has been sent. Please verify your email before logging in.'
+      );
+
+      navigation.navigate('LoginScreen');
+    } catch (err) {
+      if (err.code === 'auth/email-already-in-use') {
+        Alert.alert('That email address is already in use!');
+      } else if (err.code === 'auth/invalid-email') {
+        Alert.alert('That email address is invalid!');
+      } else {
+        Alert.alert('Error', err.message);
+      }
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.signup}>Create Account</Text>
-      <Text style={styles.header}>Join your college community and start your learning journey</Text>
-      
-      <TextInput
-        placeholder="Full Name"
-        placeholderTextColor={'#7f89b0'}
-        style={styles.inputBox}
-        value={name}
-        onChangeText={value => setName(value)}
-      />
-
-      <View style={styles.pickerWrapper}>
-      <Picker
-        selectedValue={selectedCollege}
-        onValueChange={itemValue => setSelectedCollege(itemValue)}
-        style={[
-          styles.picker,
-          { color: selectedCollege === '' ? '#7f89b0' : 'black' } // Conditional color
-        ]}
-        dropdownIconColor="#7f89b0"
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#e7ecfa' }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
       >
-        <Picker.Item label="Select Collage" value="" />
-        {colleges.map((college, index) => (
-          <Picker.Item label={college} value={college} key={index} />
-        ))}
-      </Picker>
-      </View>
+        <ScrollView
+          contentContainerStyle={styles.screen}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={[styles.card, { width: width * 0.9 }]}>
+            <Text style={styles.title}>CampusFind</Text>
+            <Text style={styles.subtitle}>Helping things find their way back</Text>
 
-      <View style={styles.pickerWrapper}>
-      <Picker
-        selectedValue={selectedSem}
-        onValueChange={itemValue => setSelectedSem(itemValue)}
-        style={[
-        styles.picker,
-        { color: selectedSem === '' ? '#7f89b0' : 'black' } // Conditional color
-      ]}
-        dropdownIconColor="#7f89b0"
-      >
-        <Picker.Item label="Select Semester" value="" />
-        {semesters.map((sem, index) => (
-          <Picker.Item label={sem} value={sem} key={index} />
-        ))}
-      </Picker>
-      </View>
+            <TextInput
+              placeholder="Full Name"
+              placeholderTextColor="#9aa4c0"
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+            />
 
-      <TextInput
-        placeholder="Course Name"
-        placeholderTextColor={'#7f89b0'}
-        style={styles.inputBox}
-        value={course}
-        onChangeText={value => setCourse(value)}
-      />
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={selectedCollege}
+                onValueChange={setSelectedCollege}
+                style={[styles.picker, { color: selectedCollege ? 'black' : '#9aa4c0' }]}
+                dropdownIconColor="#4b6cb7"
+              >
+                <Picker.Item label="Select College" value="" />
+                {colleges.map((college, index) => (
+                  <Picker.Item label={college} value={college} key={index} />
+                ))}
+              </Picker>
+            </View>
 
-      <TextInput
-        placeholder="Contact No"
-        placeholderTextColor={'#7f89b0'}
-        style={styles.inputBox}
-        value={contact}
-        onChangeText={value => setContact(value)}
-        keyboardType="phone-pad"
-      />
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={selectedSem}
+                onValueChange={setSelectedSem}
+                style={[styles.picker, { color: selectedSem ? 'black' : '#9aa4c0' }]}
+                dropdownIconColor="#4b6cb7"
+              >
+                <Picker.Item label="Select Semester" value="" />
+                {semesters.map((sem, index) => (
+                  <Picker.Item label={sem} value={sem} key={index} />
+                ))}
+              </Picker>
+            </View>
 
-      <TextInput
-         placeholder="user@charusat.edu.in"
-        placeholderTextColor={'#7f89b0'}
-        style={styles.inputBox}
-        value={email}
-        onChangeText={value => setEmail(value)}
-        keyboardType="email-address"
-      />
+            <TextInput
+              placeholder="Branch"
+              placeholderTextColor="#9aa4c0"
+              style={styles.input}
+              value={course}
+              onChangeText={setCourse}
+              autoCorrect={true}
+            />
 
-      <TextInput
-        placeholder="Password"
-        placeholderTextColor={'#7f89b0'}
-        style={styles.inputBox}
-        value={password}
-        onChangeText={value => setPassword(value)}
-        secureTextEntry
-      />
+            <TextInput
+              placeholder="Contact Number"
+              placeholderTextColor="#9aa4c0"
+              style={styles.input}
+              value={contact}
+              onChangeText={setContact}
+              keyboardType="phone-pad"
+            />
 
-      <TouchableOpacity onPress={onRegister} style={styles.register}>
-        <Text style={styles.registerTitle}>Register</Text>
-      </TouchableOpacity>
+            <TextInput
+              placeholder="user@charusat.edu.in"
+              placeholderTextColor="#9aa4c0"
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              importantForAutofill="no"
+              autoCapitalize="none"
+            />
 
-      <Text style={styles.footerText}>By creating an account, you agree to our
-         Terms of Service and Privacy Policy</Text>
+            <TextInput
+              placeholder="Password"
+              placeholderTextColor="#9aa4c0"
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
 
-      <View style={{flexDirection:'row',alignItems:'center'}}>
-       <Text style={styles.alreadyText}>Already have an account ?    </Text>
-       <TouchableOpacity onPress={() => navigation.navigate('LoginScreen')}>
-        <Text style={styles.link}>Login</Text>
-      </TouchableOpacity>
-      </View>
+            <TouchableOpacity style={styles.button} onPress={onRegister}>
+              <Text style={styles.buttonText}>Register</Text>
+            </TouchableOpacity>
 
-    </View>
+            <Text style={styles.terms}>
+              By signing up, you agree to our <Text style={styles.link}>Terms</Text> &{' '}
+              <Text style={styles.link}>Privacy Policy</Text>.
+            </Text>
+
+            <View style={styles.bottomRow}>
+              <Text style={styles.bottomText}>Already have an account?</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('LoginScreen')}>
+                <Text style={styles.logintext}> Login</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
+  screen: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    height: '100%',
-    backgroundColor:'#cfd8ee',
+    backgroundColor: '#e7ecfa',
+    paddingVertical: 30,
   },
-  inputBox: {
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    padding: 20,
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 10,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#4b6cb7',
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  input: {
     borderWidth: 1,
-    borderColor: '#7f89b0',
-    backgroundColor:'white',
-    paddingHorizontal: 12,
-    borderRadius: 7,
-    width: '90%',
-    marginTop: 20,
-    shadowColor: '#4f46e5',
+    borderColor: '#9aa4c0',
+    borderRadius: 30,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    marginTop: 16,
+    fontSize: 15,
+    color: '#000',
+    backgroundColor: '#fff',
+    elevation: 3,
+    shadowColor: '#ccc',
     shadowOpacity: 0.1,
-    elevation: 8,
   },
   pickerWrapper: {
-    width: '90%',
-    height:40,
     borderWidth: 1,
-    borderColor: '#7f89b0',
-    borderRadius: 7,
-    justifyContent:'center',
-    paddingHorizontal: 2,
-    marginTop: 20,
-    backgroundColor: 'white',
-    shadowColor: '#4f46e5',
-    shadowRadius: 8,
-    elevation: 8,
+    borderColor: '#9aa4c0',
+    borderRadius: 30,
+    marginTop: 15,
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    height: 50,
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#ccc',
+    shadowOpacity: 0.1,
   },
   picker: {
-    color: 'Black',
+    width: '100%',
+    height: '100%',
   },
-  register: {
-    width: '90%',
+  button: {
     backgroundColor: '#4b6cb7',
-    padding: 12,
+    paddingVertical: 14,
     borderRadius: 30,
+    marginTop: 28,
     alignItems: 'center',
-    marginTop: 40,
+    shadowColor: '#4f46e5',
+    shadowOpacity: 0.2,
+    elevation: 6,
   },
-  registerTitle: {
+  buttonText: {
+    color: '#fff',
     fontSize: 16,
-    color: 'white',
     fontWeight: '600',
   },
-  signup: {
-    fontSize: 28,
-    color: 'Black',
-    fontWeight: '900',
-    marginBottom: 20,
-  },
-  header:{
-    margin:10,
-    fontSize: 16,
-    color: '#64748b',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  footerText:{
-    margin:20,
-    textAlign: 'center',
+  terms: {
+    marginTop: 15,
     fontSize: 14,
-    color: '#64748b',
-    lineHeight: 20
+    color: '#6b7280',
+    textAlign: 'center',
+    lineHeight: 18,
   },
-  alreadyText:{
-    marginTop:10
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  bottomText: {
+    fontSize: 14,
+    paddingVertical: 5,
+    color: '#6b7280',
   },
   link: {
-    color: '#4b6cb7',
-    fontWeight: 'bold',
     fontSize: 16,
-    marginTop: 10,
+    fontWeight: 'bold',
+    color: '#4b6cb7',
   },
-  login:{
-    width: '90%',
-    backgroundColor: '#5a6cb2',
-    padding: 12,
-    borderRadius: 30,
-    alignItems: 'center',
-    marginTop: 40,
-  }
-
+  logintext: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#4b6cb7',
+  },
 });
 
-export default SignUpScreen;
+export default SignUpScreen;
