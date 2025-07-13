@@ -89,9 +89,9 @@ const LoginScreen = () => {
   const onLogin = async () => {
     setEmailError('');
     setPasswordError('');
-
+  
     let isValid = true;
-
+  
     if (!email) {
       setEmailError('Email is required');
       isValid = false;
@@ -99,7 +99,7 @@ const LoginScreen = () => {
       setEmailError('Use your CHARUSAT email ID');
       isValid = false;
     }
-
+  
     if (!password) {
       setPasswordError('Password is required');
       isValid = false;
@@ -107,13 +107,17 @@ const LoginScreen = () => {
       setPasswordError('Password must be at least 6 characters');
       isValid = false;
     }
-
+  
     if (!isValid) return;
-
+  
     try {
       const userCredential = await auth().signInWithEmailAndPassword(email, password);
       const user = userCredential.user;
-
+  
+      // 🔁 Reload to update emailVerified status
+      await user.reload();
+  
+      // 🔒 Block unverified users
       if (!user.emailVerified) {
         Alert.alert(
           'Email Not Verified',
@@ -129,17 +133,22 @@ const LoginScreen = () => {
             { text: 'OK' },
           ]
         );
-        await auth().signOut();
+        await auth().signOut(); // this triggers App.js to show LoginScreen again
         return;
       }
-
+  
       Toast.show({
         type: 'success',
         text1: 'Logged in successfully!',
         position: 'bottom',
       });
+      setTimeout(async () => {
+      await auth().signOut();
+      await auth().signInWithEmailAndPassword(email, password);
+    }, 1000);
 
-      navigation.navigate('HomeScreen');
+  
+      // ✅ No need to navigate manually — App.js will take over and show HomeScreen
     } catch (err) {
       if (err.code === 'auth/user-not-found') {
         setEmailError('No user found with this email');
@@ -152,6 +161,7 @@ const LoginScreen = () => {
       }
     }
   };
+  
 
   const onForgotPassword = () => {
     if (!email) {

@@ -8,29 +8,65 @@ import {
   Linking,
   Alert,
   TouchableOpacity,
+  Modal,
+  Share,
+  ActivityIndicator,
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import auth from '@react-native-firebase/auth';
 import Dialog from 'react-native-dialog';
 import { useNavigation } from '@react-navigation/native';
+import { BlurView } from '@react-native-community/blur';
 
 const ItemDetailScreen = ({ route }) => {
-  const { item } = route.params;
+  const { item, postId } = route.params;
+  const [itemData, setItemData] = useState(item);
   const [posterData, setPosterData] = useState(null);
-  const [status, setStatus] = useState(item.status || 'Active');
+  const [status, setStatus] = useState(item?.status || 'Active');
   const [dialogVisible, setDialogVisible] = useState(false);
   const [claimEmail, setClaimEmail] = useState('');
   const currentUserEmail = auth().currentUser?.email;
   const [claimedUserData, setClaimedUserData] = useState(null);
   const navigation = useNavigation();
+  const [showFullImage, setShowFullImage] = useState(false);
+  const [loading, setLoading] = useState(!item);
+
+  // Fetch item data if accessed via deep link
+  useEffect(() => {
+    const fetchItemData = async () => {
+      if (postId && !item) {
+        try {
+          setLoading(true);
+          const doc = await firestore().collection('items').doc(postId).get();
+          if (doc.exists) {
+            const data = { id: doc.id, ...doc.data() };
+            setItemData(data);
+            setStatus(data.status || 'Active');
+          } else {
+            Alert.alert('Error', 'Post not found');
+            navigation.goBack();
+          }
+        } catch (error) {
+          console.error('Error fetching item:', error);
+          Alert.alert('Error', 'Failed to load post');
+          navigation.goBack();
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchItemData();
+  }, [postId, item]);
 
   useEffect(() => {
     const fetchPoster = async () => {
+      if (!itemData?.email) return;
       try {
         const snapshot = await firestore()
           .collection('users')
-          .where('email', '==', item.email)
+          .where('email', '==', itemData.email)
           .get();
 
         if (!snapshot.empty) {
@@ -42,14 +78,15 @@ const ItemDetailScreen = ({ route }) => {
     };
 
     fetchPoster();
-  }, [item.email]);
+  }, [itemData?.email]);
+
   useEffect(() => {
     const fetchClaimedUser = async () => {
-      if (!item.claimedBy) return;
+      if (!itemData?.claimedBy) return;
       try {
         const snapshot = await firestore()
           .collection('users')
-          .where('email', '==', item.claimedBy)
+          .where('email', '==', itemData.claimedBy)
           .get();
 
         if (!snapshot.empty) {
@@ -61,7 +98,7 @@ const ItemDetailScreen = ({ route }) => {
     };
 
     fetchClaimedUser();
-  }, [item.claimedBy]);
+  }, [itemData?.claimedBy]);
 
   const handleConfirmClaim = async () => {
     if (!claimEmail || !claimEmail.includes('@')) {
@@ -84,14 +121,14 @@ const ItemDetailScreen = ({ route }) => {
       // Update status in Firestore
       await firestore()
         .collection('items') // or your collection name
-        .doc(item.id)
+        .doc(itemData.id)
         .update({
-          status: item.itemType === 'Lost' ? 'Claimed' : 'Returned',
+          status: itemData.itemType === 'Lost' ? 'Claimed' : 'Returned',
           claimedBy: claimEmail.trim(),
         });
 
       // Update local state
-      setStatus(item.itemType === 'Lost' ? 'Claimed' : 'Returned');
+      setStatus(itemData.itemType === 'Lost' ? 'Claimed' : 'Returned');
       setDialogVisible(false);
       Alert.alert('Success', 'Status updated successfully!');
     } catch (err) {
@@ -100,199 +137,277 @@ const ItemDetailScreen = ({ route }) => {
     }
   };
 
+  const handleSharePost = async () => {
+    try {
+      // Create a shareable web link for the post
+      // This will be recognized as clickable by WhatsApp and other messaging apps
+      const postLink = `https://campusfind.app/post/${itemData.id}`;
+      
+      // Fallback to custom scheme for direct app opening
+      const appDeepLink = `campusfind://post/${itemData.id}`;
+
+      const shareMessage = `🔍 ${itemData.itemType} Item: ${itemData.itemName}
+
+Description: ${itemData.description || 'No description provided'}
+Location: ${itemData.location || 'Unknown location'}
+Category: ${itemData.category || 'Not specified'}
+Posted by: ${itemData.email}
+
+Check out this post on CampusFind!
+${postLink}`;
+
+      await Share.share({
+        message: shareMessage,
+        title: `${itemData.itemType} Item: ${itemData.itemName}`,
+        url: postLink, // This will be recognized as clickable by WhatsApp
+      });
+    } catch (error) {
+      console.error('Error sharing post:', error);
+    }
+  };
+
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.imageContainer}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{ position: 'absolute', top: 18, left: 16, zIndex: 10, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 20, padding: 2 }}
-        >
-          <Ionicons name="chevron-back" size={28} color="#374151" />
-        </TouchableOpacity>
-        {item.imageUrl ? (
-          <Image source={{ uri: item.imageUrl }} style={styles.image} />
-        ) : (
-          <View style={styles.imagePlaceholder}>
-            <Text style={styles.noImageText}>No Image Available</Text>
-          </View>
-        )}
-        <View
-          style={[ 
-            styles.badge,
-            item.itemType === 'Lost' ? styles.lostBadge : styles.foundBadge,
-          ]}
-        >
-          <Text style={styles.badgeText}>{item.itemType?.toUpperCase()}</Text>
+    <>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4B6CB7" />
+          <Text style={styles.loadingText}>Loading post...</Text>
         </View>
-      </View>
-
-      <View style={styles.detailsContainer}>
-        <Text style={styles.itemName}>{item.itemName}</Text>
-
-        <View style={styles.chipsRow}>
-          {item.createdAt?.toDate && (
-            <View style={styles.chip}>
-              <Ionicons
-                name="time-outline"
-                size={16}
-                color="#555"
-                style={{ marginRight: 6 }}
-              />
-              <Text style={styles.dateText}>
-                {item.createdAt.toDate().toLocaleDateString()}
-              </Text>
-            </View>
-          )}
-
-          {item.location && (
-            <View style={styles.chip}>
-              <Ionicons
-                name="location-outline"
-                size={16}
-                color="#555"
-                style={{ marginRight: 6 }}
-              />
-              <Text style={styles.chipText}>{item.location}</Text>
-            </View>
-          )}
-
-          {item.category && (
-            <View style={styles.chip}>
-              <Ionicons
-                name="pricetag-outline"
-                size={16}
-                color="#555"
-                style={{ marginRight: 8 }}
-              />
-              <Text style={styles.chipText}>
-                {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
-              </Text>
-            </View>
-          )}
-          <View style={styles.chipsRow}>
-            <View
-              style={[
-                styles.chip,
-                status === 'Active'
-                  ? styles.activeStatus
-                  : status === 'Claimed'
-                  ? styles.claimedStatus
-                  : styles.returnedStatus,
-              ]}
-            >
-              <Ionicons
-                name={
-                  status === 'Active'
-                    ? 'flash-outline'
-                    : status === 'Claimed'
-                    ? 'checkmark-done-outline'
-                    : 'return-up-back-outline'
-                }
-                size={16}
-                color="#555"
-                style={{ marginRight: 6 }}
-              />
-              <Text style={styles.chipText}>{status}</Text>
-            </View>
-          </View>
-        </View>
-
-        <Text style={styles.sectionTitle}>Description</Text>
-        <View style={styles.descriptionBox}>
-          <Text style={styles.descriptionText}>
-            {item.description || 'No description provided.'}
-          </Text>
-        </View>
-
-        <Text style={styles.sectionTitle}>Posted By</Text>
-        <View style={styles.posterBox}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarLetter}>
-              {posterData?.name?.charAt(0) || item.email?.charAt(0) || 'U'}
-            </Text>
-          </View>
-          <View style={styles.posterInfo}>
-            <Text style={styles.posterName}>
-              {posterData?.name || 'Unknown User'}
-            </Text>
-            <Text style={styles.posterEmail}>{item.email}</Text>
-          </View>
-        </View>
-
-        {item.claimedBy && claimedUserData && (
-          <>
-            <Text style={styles.sectionTitle}>
-              {item.itemType === 'Lost' ? 'Claimed By' : 'Returned To'}
-            </Text>
-            <View style={styles.posterBox}>
-              <View style={styles.avatarCircle}>
-                <Text style={styles.avatarLetter}>
-                  {claimedUserData?.name?.charAt(0) ||
-                    item.claimedBy?.charAt(0) ||
-                    'U'}
-                </Text>
-              </View>
-              <View style={styles.posterInfo}>
-                <Text style={styles.posterName}>
-                  {claimedUserData?.name || 'Unknown User'}
-                </Text>
-                <Text style={styles.posterEmail}>{item.claimedBy}</Text>
-              </View>
-            </View>
-          </>
-        )}
-
-        <TouchableOpacity
-          style={styles.contactButton}
-          onPress={() => {
-            if (item.email) {
-              Linking.openURL(
-                `mailto:${item.email}?subject=Regarding your ${item.itemType} item&body=Hello, I saw your post about "${item.itemName}".`,
-              );
-            } else {
-              Alert.alert('No email found for this user.');
-            }
-          }}
-        >
-          <Text style={styles.contactButtonText}>Contact Poster</Text>
-        </TouchableOpacity>
-        {currentUserEmail === item.email && status === 'Active' && (
-          <TouchableOpacity
-            style={[
-              styles.contactButton,
-              { backgroundColor: '#059669', marginTop: 12 },
-            ]}
-            onPress={() => setDialogVisible(true)}
+      ) : (
+        <>
+          <Modal
+            visible={showFullImage}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowFullImage(false)}
           >
-            <Text style={styles.contactButtonText}>
-              {item.itemType === 'Lost'
-                ? 'Mark as Claimed'
-                : 'Mark as Returned'}
-            </Text>
-          </TouchableOpacity>
-        )}
-        <Dialog.Container visible={dialogVisible}>
-          <Dialog.Title>Enter Email</Dialog.Title>
-          <Dialog.Description>
-            Please enter the email of the person you{' '}
-            {item.itemType === 'Lost'
-              ? 'claimed the item from'
-              : 'returned the item to'}
-            .
-          </Dialog.Description>
-          <Dialog.Input
-            placeholder="user@charusat.edu.in"
-            value={claimEmail}
-            onChangeText={setClaimEmail}
-          />
-          <Dialog.Button
-            label="Cancel"
-            onPress={() => setDialogVisible(false)}
-          />
-          <Dialog.Button label="Confirm" onPress={handleConfirmClaim} />
-        </Dialog.Container>
-      </View>
-    </ScrollView>
+            <View style={styles.fullImageContainer}>
+              <BlurView
+                style={StyleSheet.absoluteFill}
+                blurType="light"
+                blurAmount={15}
+                reducedTransparencyFallbackColor="rgba(0,0,0,0.3)"
+              />
+              <Image
+                source={{ uri: itemData.imageUrl }}
+                style={styles.fullImage}
+                resizeMode="contain"
+              />
+              <TouchableOpacity
+                style={styles.closeIcon}
+                onPress={() => setShowFullImage(false)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close-circle" size={38} color="#fff" style={{ textShadowColor: '#000', textShadowRadius: 6 }} />
+              </TouchableOpacity>
+            </View>
+          </Modal>
+          <ScrollView style={styles.container}>
+            <View style={styles.imageContainer}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={{ position: 'absolute', top: 18, left: 16, zIndex: 10, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 20, padding: 2 }}
+              >
+                <Ionicons name="chevron-back" size={28} color="#374151" />
+              </TouchableOpacity>
+              {itemData.imageUrl ? (
+                <TouchableOpacity onPress={() => setShowFullImage(true)} activeOpacity={0.8}>
+                  <Image source={{ uri: itemData.imageUrl }} style={styles.image} />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <Text style={styles.noImageText}>No Image Available</Text>
+                </View>
+              )}
+              <View
+                style={[ 
+                  styles.badge,
+                  itemData.itemType === 'Lost' ? styles.lostBadge : styles.foundBadge,
+                ]}
+              >
+                <Text style={styles.badgeText}>{itemData.itemType?.toUpperCase()}</Text>
+              </View>
+            </View>
+
+            <View style={styles.detailsContainer}>
+              <View style={styles.itemNameRow}>
+                <Text style={styles.itemName}>{itemData.itemName}</Text>
+                <TouchableOpacity
+                  onPress={handleSharePost}
+                  style={styles.shareButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="share-social" size={24} color="#4B6CB7" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.chipsRow}>
+                {itemData.createdAt?.toDate && (
+                  <View style={styles.chip}>
+                    <Ionicons
+                      name="time-outline"
+                      size={16}
+                      color="#555"
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text style={styles.dateText}>
+                      {itemData.createdAt.toDate().toLocaleDateString()}
+                    </Text>
+                  </View>
+                )}
+
+                {itemData.location && (
+                  <View style={styles.chip}>
+                    <Ionicons
+                      name="location-outline"
+                      size={16}
+                      color="#555"
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text style={styles.chipText}>{itemData.location}</Text>
+                  </View>
+                )}
+
+                {itemData.category && (
+                  <View style={styles.chip}>
+                    <Ionicons
+                      name="pricetag-outline"
+                      size={16}
+                      color="#555"
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={styles.chipText}>
+                      {itemData.category.charAt(0).toUpperCase() + itemData.category.slice(1)}
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.chipsRow}>
+                  <View
+                    style={[
+                      styles.chip,
+                      status === 'Active'
+                        ? styles.activeStatus
+                        : status === 'Claimed'
+                        ? styles.claimedStatus
+                        : styles.returnedStatus,
+                    ]}
+                  >
+                    <Ionicons
+                      name={
+                        status === 'Active'
+                          ? 'flash-outline'
+                          : status === 'Claimed'
+                          ? 'checkmark-done-outline'
+                          : 'return-up-back-outline'
+                      }
+                      size={16}
+                      color="#555"
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text style={styles.chipText}>{status}</Text>
+                  </View>
+                </View>
+              </View>
+
+              <Text style={styles.sectionTitle}>Description</Text>
+              <View style={styles.descriptionBox}>
+                <Text style={styles.descriptionText}>
+                  {itemData.description || 'No description provided.'}
+                </Text>
+              </View>
+
+              <Text style={styles.sectionTitle}>Posted By</Text>
+              <View style={styles.posterBox}>
+                <View style={styles.avatarCircle}>
+                  <Text style={styles.avatarLetter}>
+                    {posterData?.name?.charAt(0) || itemData.email?.charAt(0) || 'U'}
+                  </Text>
+                </View>
+                <View style={styles.posterInfo}>
+                  <Text style={styles.posterName}>
+                    {posterData?.name || 'Unknown User'}
+                  </Text>
+                  <Text style={styles.posterEmail}>{itemData.email}</Text>
+                </View>
+              </View>
+
+              {itemData.claimedBy && claimedUserData && (
+                <>
+                  <Text style={styles.sectionTitle}>
+                    {itemData.itemType === 'Lost' ? 'Claimed By' : 'Returned To'}
+                  </Text>
+                  <View style={styles.posterBox}>
+                    <View style={styles.avatarCircle}>
+                      <Text style={styles.avatarLetter}>
+                        {claimedUserData?.name?.charAt(0) ||
+                          itemData.claimedBy?.charAt(0) ||
+                          'U'}
+                      </Text>
+                    </View>
+                    <View style={styles.posterInfo}>
+                      <Text style={styles.posterName}>
+                        {claimedUserData?.name || 'Unknown User'}
+                      </Text>
+                      <Text style={styles.posterEmail}>{itemData.claimedBy}</Text>
+                    </View>
+                  </View>
+                </>
+              )}
+
+              <TouchableOpacity
+                style={styles.contactButton}
+                onPress={() => {
+                  if (itemData.email) {
+                    Linking.openURL(
+                      `mailto:${itemData.email}?subject=Regarding your ${itemData.itemType} item&body=Hello, I saw your post about "${itemData.itemName}".`,
+                    );
+                  } else {
+                    Alert.alert('No email found for this user.');
+                  }
+                }}
+              >
+                <Text style={styles.contactButtonText}>Contact Poster</Text>
+              </TouchableOpacity>
+              {currentUserEmail === itemData.email && status === 'Active' && (
+                <TouchableOpacity
+                  style={[
+                    styles.contactButton,
+                    { backgroundColor: '#059669', marginTop: 12 },
+                  ]}
+                  onPress={() => setDialogVisible(true)}
+                >
+                  <Text style={styles.contactButtonText}>
+                    {itemData.itemType === 'Lost'
+                      ? 'Mark as Claimed'
+                      : 'Mark as Returned'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <Dialog.Container visible={dialogVisible}>
+                <Dialog.Title>Enter Email</Dialog.Title>
+                <Dialog.Description>
+                  Please enter the email of the person you{' '}
+                  {itemData.itemType === 'Lost'
+                    ? 'claimed the item from'
+                    : 'returned the item to'}
+                  .
+                </Dialog.Description>
+                <Dialog.Input
+                  placeholder="user@charusat.edu.in"
+                  value={claimEmail}
+                  onChangeText={setClaimEmail}
+                />
+                <Dialog.Button
+                  label="Cancel"
+                  onPress={() => setDialogVisible(false)}
+                />
+                <Dialog.Button label="Confirm" onPress={handleConfirmClaim} />
+              </Dialog.Container>
+            </View>
+          </ScrollView>
+        </>
+      )}
+    </>
   );
 };
 
@@ -341,11 +456,17 @@ const styles = StyleSheet.create({
     marginTop: -14,
     elevation: 4,
   },
+  itemNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   itemName: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#374151',
     marginBottom: 10,
+    flex: 1,
   },
   chipsRow: {
     flexDirection: 'row',
@@ -452,6 +573,44 @@ const styles = StyleSheet.create({
   },
   returnedStatus: {
     color: '#059669',
+  },
+  fullImageContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullImage: {
+    width: '95%',
+    height: '80%',
+    borderRadius: 12,
+    backgroundColor: '#222',
+  },
+  closeIcon: {
+    position: 'absolute',
+    top: 40,
+    right: 24,
+    zIndex: 10,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 20,
+    padding: 2,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#EAF0F8',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#4B6CB7',
+    fontWeight: '500',
+  },
+  shareButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#F0F4FF',
+    marginLeft: 12,
   },
 });
 

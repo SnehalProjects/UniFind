@@ -8,18 +8,19 @@ import {
   TouchableOpacity,
   Image,
   Platform,
+  Alert,
 } from 'react-native';
 import firestore, { firebase } from '@react-native-firebase/firestore';
 import {
   launchCamera,
   launchImageLibrary,
 } from 'react-native-image-picker';
-import auth from '@react-native-firebase/auth';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Toast from 'react-native-toast-message';
 import NetInfo from '@react-native-community/netinfo';
 import { useNavigation } from '@react-navigation/native';
+import auth from '@react-native-firebase/auth';
 
 const IMGBB_API_KEY = '0c8654c65866f2d583a13f9cd54da770'; 
 
@@ -62,6 +63,7 @@ const PostItemScreen = () => {
   const [location, setLocation] = useState('');
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
   const [email, setEmail] = useState('');
 
   useState(() => {
@@ -82,7 +84,6 @@ const PostItemScreen = () => {
 
   fetchUserEmail();
 }, []);
-
 
   const pickImage = () => {
     launchImageLibrary({ mediaType: 'photo' }, response => {
@@ -153,6 +154,7 @@ const handleSubmit = async () => {
     return;
   }
 
+  setIsPosting(true);
   try {
     // Upload image to imgbb
     const imageUrl = imageUri ? await uploadImageToImgbb(imageUri) : null;
@@ -192,6 +194,8 @@ const handleSubmit = async () => {
       text1: 'Failed to post item',
       position: 'bottom',
     });
+  } finally {
+    setIsPosting(false);
   }
 };
 
@@ -253,7 +257,7 @@ const handleSubmit = async () => {
           </>
         ) : (
           <TouchableOpacity onPress={pickImage}>
-            <Text style={styles.imagePickerText}>Add Photo </Text>
+            <Text style={styles.imagePickerText}>Add Photo* </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -348,9 +352,8 @@ const handleSubmit = async () => {
         <Icon name="mail-outline" size={18} color="#444" />
         <Text style={styles.labelText}>Contact Email *</Text>
       </View>
-
       <TextInput
-        style={styles.input}
+        style={[styles.input, { backgroundColor: '#efefef',color: '#444' }]}
         value={email}
         editable={false} // Disable editing
         selectTextOnFocus={false}
@@ -358,9 +361,23 @@ const handleSubmit = async () => {
         placeholderTextColor="#A3AAB8"
       />
 
-      <TouchableOpacity style={styles.postButton} onPress={handleSubmit}>
-        <Text style={styles.postButtonText}>
-          {itemType === 'Lost' ? 'Post Lost Item' : 'Post Found Item'}
+      <TouchableOpacity
+        style={[
+          styles.postButton,
+          isPosting && styles.postingButton,
+        ]}
+        onPress={handleSubmit}
+        disabled={isPosting}
+      >
+        <Text style={[
+          styles.postButtonText,
+          isPosting && styles.postingButtonText
+        ]}>
+          {isPosting
+            ? 'Posting...'
+            : itemType === 'Lost'
+              ? 'Post Lost Item'
+              : 'Post Found Item'}
         </Text>
       </TouchableOpacity>
 
@@ -444,9 +461,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
+  postingButton: {
+    backgroundColor: '#A3AAB8', // gray or any processing color
+    opacity: 0.7,
+  },
   postButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  postingButtonText: {
+    color: '#fff', // or a lighter color if you want
   },
   footerNote: {
     fontSize: 12,

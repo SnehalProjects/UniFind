@@ -64,7 +64,7 @@ const SignUpScreen = () => {
         contact,
         college: selectedCollege,
         semester: selectedSem,
-        createdAt: firestore.FieldValue.serverTimestamp(),
+        createdAt: firestore.Timestamp.now(),
         profileImage: '',
       });
 
@@ -72,7 +72,7 @@ const SignUpScreen = () => {
 
       Alert.alert(
         'Verify Email',
-        'A verification email has been sent. Please verify your email before logging in.'
+        'A verification email has been sent. Please verify with your registered email before logging in.'
       );
 
       navigation.navigate('LoginScreen');
@@ -116,8 +116,8 @@ const SignUpScreen = () => {
           onValueChange(value);
           setErrors({ ...errors, [errorKey]: null });
         }}
-        style={styles.picker}
-        dropdownIconColor="#4B6CB7"
+        style={[styles.picker, { color: selectedValue ? '#000' : '#7f89b0' }]}
+        dropdownIconColor="#7f89b0"
       >
         <Picker.Item label={placeholder} value="" />
         {items.map((item, index) => (
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 25,
     padding: 20,
-    maxWidth: 340,
+    maxWidth: 350,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -232,7 +232,6 @@ const styles = StyleSheet.create({
   picker: {
     flex: 1,
     height: 50,
-    color:'#7f89b0'
   },
   button: {
     backgroundColor: '#4B6CB7',
