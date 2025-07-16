@@ -11,13 +11,13 @@ import {
   Modal,
   Share,
   ActivityIndicator,
+  ImageBackground,
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import auth from '@react-native-firebase/auth';
 import Dialog from 'react-native-dialog';
 import { useNavigation } from '@react-navigation/native';
-import { BlurView } from '@react-native-community/blur';
 
 const ItemDetailScreen = ({ route }) => {
   const { item, postId } = route.params;
@@ -146,20 +146,12 @@ const ItemDetailScreen = ({ route }) => {
       // Fallback to custom scheme for direct app opening
       const appDeepLink = `campusfind://post/${itemData.id}`;
 
-      const shareMessage = `🔍 ${itemData.itemType} Item: ${itemData.itemName}
-
-Description: ${itemData.description || 'No description provided'}
-Location: ${itemData.location || 'Unknown location'}
-Category: ${itemData.category || 'Not specified'}
-Posted by: ${itemData.email}
-
-Check out this post on CampusFind!
-${postLink}`;
+      const shareMessage = `🔍 ${itemData.itemType} Item: ${itemData.itemName}\n\nDescription: ${itemData.description || 'No description provided'}\nLocation: ${itemData.location || 'Unknown location'}\nCategory: ${itemData.category || 'Not specified'}\nPosted by: ${itemData.email}\n\nCheck out this post on CampusFind!\n${postLink}\n\nImage: ${itemData.imageUrl ? itemData.imageUrl : 'No image available'}`;
 
       await Share.share({
         message: shareMessage,
         title: `${itemData.itemType} Item: ${itemData.itemName}`,
-        url: postLink, // This will be recognized as clickable by WhatsApp
+        url: itemData.imageUrl || postLink, // Prefer image URL if available
       });
     } catch (error) {
       console.error('Error sharing post:', error);
@@ -174,20 +166,20 @@ ${postLink}`;
           <Text style={styles.loadingText}>Loading post...</Text>
         </View>
       ) : (
-        <>
+        <> 
           <Modal
             visible={showFullImage}
             transparent={true}
             animationType="fade"
             onRequestClose={() => setShowFullImage(false)}
           >
-            <View style={styles.fullImageContainer}>
-              <BlurView
-                style={StyleSheet.absoluteFill}
-                blurType="light"
-                blurAmount={15}
-                reducedTransparencyFallbackColor="rgba(0,0,0,0.3)"
-              />
+            <ImageBackground
+              source={{ uri: itemData.imageUrl }}
+              style={styles.fullImageContainer}
+              blurRadius={20}
+              resizeMode="cover"
+            >
+              <View style={styles.backgroundOverlay} />
               <Image
                 source={{ uri: itemData.imageUrl }}
                 style={styles.fullImage}
@@ -200,7 +192,7 @@ ${postLink}`;
               >
                 <Ionicons name="close-circle" size={38} color="#fff" style={{ textShadowColor: '#000', textShadowRadius: 6 }} />
               </TouchableOpacity>
-            </View>
+            </ImageBackground>
           </Modal>
           <ScrollView style={styles.container}>
             <View style={styles.imageContainer}>
@@ -611,6 +603,14 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#F0F4FF',
     marginLeft: 12,
+  },
+  backgroundOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
 });
 

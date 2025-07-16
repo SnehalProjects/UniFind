@@ -21,7 +21,7 @@ import Toast from 'react-native-toast-message';
 const MyPostsScreen = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('All');
+  const [filter, setFilter] = useState('Active');
   const [selectedPost, setSelectedPost] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -173,10 +173,10 @@ const MyPostsScreen = () => {
   };
 
   const filteredPosts = posts.filter(item =>
-    filter === 'All'
+    filter === 'Show All'
       ? true
-      : filter === 'Show All'
-      ? true
+      : filter === 'Active'
+      ? (item.status === 'Active' || !item.status)
       : item.itemType === filter
   );
 
@@ -238,7 +238,7 @@ const renderItem = ({ item }) => (
 
       {/* FILTERS */}
       <View style={styles.filters}>
-        {['All', 'Lost', 'Found', 'Show All'].map(tab => (
+        {['Active', 'Lost', 'Found', 'Show All'].map(tab => (
           <TouchableOpacity
             key={tab}
             style={[

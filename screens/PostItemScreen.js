@@ -9,6 +9,8 @@ import {
   Image,
   Platform,
   Alert,
+  Modal,
+  PermissionsAndroid,
 } from 'react-native';
 import firestore, { firebase } from '@react-native-firebase/firestore';
 import {
@@ -22,35 +24,59 @@ import NetInfo from '@react-native-community/netinfo';
 import { useNavigation } from '@react-navigation/native';
 import auth from '@react-native-firebase/auth';
 
+
 const IMGBB_API_KEY = '0c8654c65866f2d583a13f9cd54da770'; 
 
-const uploadImageToImgbb = async (imageUri) => {
-  const formData = new FormData();
+// Request camera permission for Android
+const requestCameraPermission = async () => {
+  if (Platform.OS === 'android') {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+        {
+          title: 'Camera Permission',
+          message: 'This app needs access to your camera to take photos.',
+          buttonNeutral: 'Ask Me Later',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
+        },
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (err) {
+      console.error('Permission request error:', err);
+      return false;
+    }
+  }
+  return true; // iOS handles permissions automatically
+};
 
-  formData.append('image', {
-    uri: imageUri,
-    type: 'image/jpeg',
-    name: 'upload.jpg',
-  });
-
+const uploadImageToImgbb = async (base64data) => {
   try {
+    const formData = new FormData();
+    formData.append('image', base64data);
+
     const response = await fetch(
       `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
       {
         method: 'POST',
         body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
       }
     );
+
     const data = await response.json();
+    if (!data.success) {
+      console.error('ImgBB upload error:', data);
+      return null;
+    }
+
     return data.data.url;
   } catch (error) {
     console.error('Image upload failed:', error);
     return null;
   }
 };
+
+
 
 
 const PostItemScreen = () => {
@@ -65,6 +91,8 @@ const PostItemScreen = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const [email, setEmail] = useState('');
+  const [showImagePickerModal, setShowImagePickerModal] = useState(false);
+  const [imageBase64, setImageBase64] = useState(null);
 
   useState(() => {
   const fetchUserEmail = async () => {
@@ -85,121 +113,139 @@ const PostItemScreen = () => {
   fetchUserEmail();
 }, []);
 
-  const pickImage = () => {
-    launchImageLibrary({ mediaType: 'photo' }, response => {
+  const pickImageFromGallery = () => {
+    setShowImagePickerModal(false);
+    launchImageLibrary({ mediaType: 'photo', includeBase64: true}, response => {
       const assets = response?.assets;
 
-      if (assets && assets.length > 0 && assets[0]?.uri) {
-        console.log('Image URI:', assets[0].uri); // ✅ Log this
+      if (assets && assets.length > 0) {
         setImageUri(assets[0].uri);
+        setImageBase64(assets[0].base64);
       } else {
         console.warn('Image not selected or cancelled.');
       }
     });
   };
 
-  // const uploadImage = async () => {
-  //   if (!imageUri) {
-  //     console.warn("No image selected");
-  //     return null;
-  //   }
+  const takePhotoWithCamera = async () => {
+    setShowImagePickerModal(false);
+    
+    // Request camera permission first
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) {
+      return;
+    }
 
-  //   try {
-  //     // Remove file:// prefix on iOS
-  //     const filePath = Platform.OS === 'ios' ? imageUri.replace('file://', '') : imageUri;
-  //     const filename = filePath.substring(filePath.lastIndexOf('/') + 1);
+    // Launch camera with basic configuration
+    const options = {
+      mediaType: 'photo',
+      quality: 0.8,
+      saveToPhotos: false,
+    };
 
-  //     const ref = storage().ref(`items/${filename}`);
-  //     await ref.putFile(filePath); // error occurs here if filePath is wrong
+    launchCamera(options, (response) => {
+      if (response.didCancel) {
+        console.log('User cancelled camera');
+        return;
+      }
+      
+      if (response.error) {
+        console.error('Camera error:', response.error);
+        Alert.alert('Camera Error', 'Failed to open camera. Please try again.');
+        return;
+      }
 
-  //     const downloadUrl = await ref.getDownloadURL();
-  //     return downloadUrl;
-  //   } catch (err) {
-  //     console.error('Image upload failed:', err);
-  //     throw err;
-  //   }
-  // };
-
-
-const handleSubmit = async () => {
-  const netState = await NetInfo.fetch();
-
-  if (!netState.isConnected || !netState.isInternetReachable) {
-    Toast.show({
-      type: 'error',
-      text1: 'No internet connection',
-      text2: 'Please connect to the internet to post the item.',
-      position: 'bottom',
+      const assets = response?.assets;
+      if (assets && assets.length > 0 && assets[0]?.uri) {
+        console.log('Camera Image URI:', assets[0].uri);
+        setImageUri(assets[0].uri);
+      } else {
+        console.warn('No image captured from camera.');
+      }
     });
-    return;
-  }
+  };
 
-  // Check required fields
-  if (!itemName.trim() || !description.trim() || !location.trim() || !email.trim()) {
-    Toast.show({
-      type: 'error',
-      text1: 'Please fill in all required (*) fields',
-      position: 'bottom',
-    });
-    return;
-  }
+  const showImagePickerOptions = () => {
+    setShowImagePickerModal(true);
+  };
 
-  // Validate CHARUSAT email
-  if (!email.endsWith('@charusat.edu.in')) {
-    Toast.show({
-      type: 'error',
-      text1: 'Please use your CHARUSAT email ID',
-      position: 'bottom',
-    });
-    return;
-  }
+  const handleSubmit = async () => {
+    const netState = await NetInfo.fetch();
 
-  setIsPosting(true);
-  try {
-    // Upload image to imgbb
-    const imageUrl = imageUri ? await uploadImageToImgbb(imageUri) : null;
+    if (!netState.isConnected || !netState.isInternetReachable) {
+      Toast.show({
+        type: 'error',
+        text1: 'No internet connection',
+        text2: 'Please connect to the internet to post the item.',
+        position: 'bottom',
+      });
+      return;
+    }
 
-    await firestore().collection('items').add({
-      itemType,
-      itemName,
-      category,
-      description,
-      location,
-      date: date.toISOString(),
-      email: email.trim().toLowerCase(),
-      imageUrl,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      status: 'Active'
-    });
+    // Check required fields
+    if (!itemName.trim() || !description.trim() || !location.trim() || !email.trim()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Please fill in all required (*) fields',
+        position: 'bottom',
+      });
+      return;
+    }
 
-    Toast.show({
-      type: 'success',
-      text1: `${itemType} item posted successfully!`,
-      position: 'bottom',
-    });
+    // Validate CHARUSAT email
+    if (!email.endsWith('@charusat.edu.in')) {
+      Toast.show({
+        type: 'error',
+        text1: 'Please use your CHARUSAT email ID',
+        position: 'bottom',
+      });
+      return;
+    }
 
-    // ✅ Clear form after successful post
-    setItemName('');
-    setCategory('');
-    setDescription('');
-    setLocation('');
-    setEmail('');
-    setImageUri(null);
-    setDate(new Date());
-    setItemType('Lost');
-  } catch (error) {
-    console.error(error);
-    Toast.show({
-      type: 'error',
-      text1: 'Failed to post item',
-      position: 'bottom',
-    });
-  } finally {
-    setIsPosting(false);
-  }
-};
+    setIsPosting(true);
+    try {
+      // Upload image to imgbb
+      const imageUrl = imageUri ? await uploadImageToImgbb(imageBase64) : null;
 
+      await firestore().collection('items').add({
+        itemType,
+        itemName,
+        category,
+        description,
+        location,
+        date: date.toISOString(),
+        email: email.trim().toLowerCase(),
+        imageUrl,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        status: 'Active'
+      });
 
+      Toast.show({
+        type: 'success',
+        text1: `${itemType} item posted successfully!`,
+        position: 'bottom',
+      });
+
+      // ✅ Clear form after successful post
+      setItemName('');
+      setCategory('');
+      setDescription('');
+      setLocation('');
+      setEmail('');
+      setImageUri(null);
+      setDate(new Date());
+      setItemType('Lost');
+    } catch (error) {
+      console.error(error);
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to post item',
+        position: 'bottom',
+      });
+    } finally {
+      setIsPosting(false);
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -256,7 +302,7 @@ const handleSubmit = async () => {
             </TouchableOpacity>
           </>
         ) : (
-          <TouchableOpacity onPress={pickImage}>
+          <TouchableOpacity onPress={showImagePickerOptions}>
             <Text style={styles.imagePickerText}>Add Photo* </Text>
           </TouchableOpacity>
         )}
@@ -269,7 +315,7 @@ const handleSubmit = async () => {
       </View>
       <TextInput
         style={styles.input}
-        placeholder="e.g., Blue iPhone 13, Black Wallet"
+        placeholder="e.g., Blue Bottle, Black Wallet"
         placeholderTextColor="#A3AAB8"
         value={itemName}
         onChangeText={setItemName}
@@ -282,7 +328,7 @@ const handleSubmit = async () => {
       </View>
       <TextInput
         style={styles.input}
-        placeholder="Select a category"
+        placeholder="e.g., Electronic"
         placeholderTextColor="#A3AAB8"
         value={category}
         onChangeText={setCategory}
@@ -315,7 +361,7 @@ const handleSubmit = async () => {
       <TextInput
         style={styles.input}
         placeholderTextColor="#A3AAB8"
-        placeholder="e.g., Central Park near the fountain"
+        placeholder="e.g., Library building, Main gate"
         value={location}
         onChangeText={setLocation}
       />
@@ -385,6 +431,46 @@ const handleSubmit = async () => {
         * Required fields. By posting, you agree to share your contact
         information with interested parties.
       </Text>
+
+      {/* Image Picker Modal */}
+      <Modal
+        visible={showImagePickerModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowImagePickerModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Choose Photo</Text>
+              <TouchableOpacity
+                onPress={() => setShowImagePickerModal(false)}
+                style={styles.closeButton}
+              >
+                <Icon name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={pickImageFromGallery}
+            >
+              <Icon name="images-outline" size={24} color="#4B6CB7" />
+              <Text style={styles.modalOptionText}>Choose from Gallery</Text>
+              <Icon name="chevron-forward" size={20} color="#ccc" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={takePhotoWithCamera}
+            >
+              <Icon name="camera-outline" size={24} color="#4B6CB7" />
+              <Text style={styles.modalOptionText}>Take Photo with Camera</Text>
+              <Icon name="chevron-forward" size={20} color="#ccc" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -398,6 +484,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     marginBottom: 5,
+    color: '#444C5E',
   },
   subtitle: {
     fontSize: 14,
@@ -452,7 +539,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 12,
     borderColor: '#B0B9CE',
-    borderWidth: 1,
+    borderWidth: 1, 
+    color: '#000',
   },
   postButton: {
     backgroundColor: '#4B6CB7',
@@ -495,6 +583,53 @@ const styles = StyleSheet.create({
     right: 6,
     // backgroundColor: 'rgba(0,0,0,0.5)',
     borderRadius: 12,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 20,
+    width: '80%',
+    maxWidth: 350,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    marginBottom: 10,
+    backgroundColor: '#f8f9fa',
+  },
+  modalOptionText: {
+    flex: 1,
+    marginLeft: 15,
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
   },
 });
 

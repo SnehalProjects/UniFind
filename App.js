@@ -16,17 +16,10 @@ import DrawerScreen from './screens/DrawerScreen.js';
 import MyPostsScreen from './screens/MyPostsScreen';
 import SettingScreen from './screens/SettingScreen';
 import CompleteProfileScreen from './screens/CompleteProfileScreen';
+import HelpSupportScreen from './screens/HelpSupportScreen';
+import FAQScreen from './screens/FAQScreen';
 
 import { LogBox } from 'react-native';
-
-// Ignore all log notifications:
-LogBox.ignoreAllLogs();
-
-// OR: Ignore specific warnings
-LogBox.ignoreLogs([
-  'Warning: ...', // exact warning string
-  'AsyncStorage has been extracted from react-native core',
-]);
 
 const Stack = createNativeStackNavigator();
 
@@ -48,22 +41,24 @@ export default function App() {
   };
 
   return (
-    <NavigationContainer linking={linking}>
-      <Stack.Navigator initialRouteName="LoginScreen"screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="HomeScreen" component={HomeScreen} />
-        <Stack.Screen name="PostItem" component={PostItemScreen} />
-        <Stack.Screen name="LostItems" component={LostItemsScreen} />
-        <Stack.Screen name="FoundItems" component={FoundItemsScreen} />
-        <Stack.Screen name="ItemDetail" component={ItemDetailScreen} options={{ title: 'Item Details' }}/>
-        <Stack.Screen name="LoginScreen" component={LoginScreen} />
-        <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
-        <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
-        <Stack.Screen name="DrawerScreen" component={DrawerScreen} />
-        <Stack.Screen name="SettingScreen" component={SettingScreen} />
-        <Stack.Screen name="MyPostsScreen" component={MyPostsScreen} />
-        <Stack.Screen name="CompleteProfileScreen" component={CompleteProfileScreen} />
-      </Stack.Navigator>
-      <Toast />
-    </NavigationContainer>
+      <NavigationContainer linking={linking}>
+        <Stack.Navigator initialRouteName="LoginScreen"screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="HomeScreen" component={HomeScreen} />
+          <Stack.Screen name="PostItem" component={PostItemScreen} />
+          <Stack.Screen name="LostItems" component={LostItemsScreen} />
+          <Stack.Screen name="FoundItems" component={FoundItemsScreen} />
+          <Stack.Screen name="ItemDetail" component={ItemDetailScreen} options={{ title: 'Item Details' }}/>
+          <Stack.Screen name="LoginScreen" component={LoginScreen} />
+          <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
+          <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+          <Stack.Screen name="DrawerScreen" component={DrawerScreen} />
+          <Stack.Screen name="SettingScreen" component={SettingScreen} />
+          <Stack.Screen name="MyPostsScreen" component={MyPostsScreen} />
+          <Stack.Screen name="CompleteProfileScreen" component={CompleteProfileScreen} />
+          <Stack.Screen name="HelpSupportScreen" component={HelpSupportScreen} />
+          <Stack.Screen name="FAQScreen" component={FAQScreen} />
+        </Stack.Navigator>
+        <Toast />
+      </NavigationContainer>
   );
 }

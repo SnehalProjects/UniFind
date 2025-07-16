@@ -95,3 +95,78 @@ To learn more about React Native, take a look at the following resources:
 - [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
 - [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
 - [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+
+---
+
+## 🔔 Setting Up Firebase Cloud Functions for Push Notifications
+
+To send push notifications to all users (except the poster) when a new item is posted, follow these steps:
+
+### 1. Install Firebase CLI (if not already)
+```sh
+npm install -g firebase-tools
+```
+
+### 2. Initialize Firebase Functions
+```sh
+firebase init functions
+```
+- Choose **JavaScript** when prompted.
+- Allow it to install dependencies.
+
+### 3. Add the Notification Function
+Open `functions/index.js` and add this code:
+```js
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+admin.initializeApp();
+
+exports.notifyOnNewItem = functions.firestore
+  .document('items/{itemId}')
+  .onCreate(async (snap, context) => {
+    const newItem = snap.data();
+    const posterEmail = newItem.email;
+
+    // Get all users except the poster
+    const usersSnapshot = await admin.firestore().collection('users').get();
+    const tokens = [];
+    usersSnapshot.forEach(doc => {
+      const user = doc.data();
+      if (user.email !== posterEmail && user.fcmToken) {
+        tokens.push(user.fcmToken);
+      }
+    });
+
+    if (tokens.length === 0) return null;
+
+    const payload = {
+      notification: {
+        title: 'New Item Posted!',
+        body: `${newItem.itemName} has been posted. Check it out!`,
+      },
+      data: {
+        itemId: context.params.itemId,
+      },
+    };
+
+    // Send notification to all tokens
+    return admin.messaging().sendToDevice(tokens, payload);
+  });
+```
+
+### 4. Install Admin SDK in the Functions Directory
+```sh
+cd functions
+npm install firebase-admin
+```
+
+### 5. Deploy the Function
+```sh
+firebase deploy --only functions
+```
+
+### 6. Test
+- Post a new item from one device.
+- All other users (with notifications enabled) should receive a push notification.
+
+---

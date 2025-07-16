@@ -1,0 +1,57 @@
+Admin dashboard??
+
+1. all the images will upload locally then after deploy will have to purchase cloud? and how to then manage it.
+
+2. container bottom full 
+
+3. lotty animation in loading.
+
+4. auto remove in 15 days.
+
+5. images to firestore? or imgbb
+
+6. resend email
+
+7. phone aado thay toy ui na hale.
+
+8. camera upload //optional
+
+9. push notification
+
+10. feedback option in setting / or biju kaik rakhvanu chhe
+
+11. dark mode theme
+
+12. help and support
+
+13. about us
+
+14. if email exist na kare to proper error msg aavu pade.
+
+15. Collage select and sem select replacement
+
+16. sign up and sign in ma tap kaira pachi button disable thay.
+
+17. sign in not redirecting on home scree.
+
+18. back karu to saav login screen par vai jay.
+
+19. responsive 
+
+20. my post - all and show all replace.
+
+21. image share with photo?
+
+22. posted by and returned to check
+
+23. last post nu edit ui
+
+24. post should also manage from item detail screen
+
+25. user can apply multiple filter active + lost
+
+26. red error in help and support
+
+Q. dropdown badhe batavu saru lagse?
+
+

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dimensions, Platform} from 'react-native';
+import { Dimensions, Platform, Alert } from 'react-native';
 import {
   View,
   Text,
@@ -13,25 +13,24 @@ import auth from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useNavigation } from '@react-navigation/native';
 import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+import firestore from '@react-native-firebase/firestore';
 
 fontSize: RFValue(16)
 
 const { width, height } = Dimensions.get('window');
 
 const SettingScreen = () => {
-  const [darkMode, setDarkMode] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const navigation = useNavigation();
 
    const handleLogout = async () => {
     await auth().signOut();
     await GoogleSignin.signOut();  
     navigation.navigate('LoginScreen');
-    closeDrawer(); // ✅ NEW: Close drawer on logout
+    // closeDrawer(); // ✅ NEW: Close drawer on logout
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: '#cfd8ee' }]}>
       <View style={styles.header}>    
         <TouchableOpacity onPress={() => navigation.goBack()}>
             <Icon name="chevron-back" size={28} color="#374151" />
@@ -47,29 +46,19 @@ const SettingScreen = () => {
       </View>
 
       <View style={styles.section}>
-        <SettingItem icon="person-circle-outline" title="Profile" subtitle="Update your details" onPress={() => navigation.navigate('ProfileScreen')} />
-        <SettingItem icon="key-outline" title="Password Settings" subtitle="Manage cards & UPI" />
-        <SettingItem icon="shield-checkmark" title="Security & Privacy" subtitle="Change password, enable 2FA" />
-        <SettingItem icon="language" title="Language" subtitle="Change app language" />
+        <SettingItem icon="person-circle-outline" title="Your Profile" subtitle="Update your details" onPress={() => navigation.navigate('ProfileScreen')} />
+        <SettingItem icon="key-outline" title="Manage Password" subtitle="Change your password" />
+        <SettingItem icon="lock-open-outline" title="Forgot Password" subtitle="Recover your password" />
+        <SettingItem icon="create-outline" title="Manage Posts" subtitle="Edit or delete posts" onPress={() => navigation.navigate('MyPostsScreen')} />
       </View>
 
       <View style={styles.section}>
-        <ToggleSettingItem
-          icon="moon"
-          title="Dark Mode"
-          value={darkMode}
-          onValueChange={setDarkMode}
-        />
-        <ToggleSettingItem
-          icon="notifications"
-          title="Push Notifications"
-          value={notificationsEnabled}
-          onValueChange={setNotificationsEnabled}
-        />
+        <SettingItem icon="help-circle-outline" title="FAQs" subtitle="Frequently asked questions" onPress={() => navigation.navigate('FAQScreen')} />
+        <SettingItem icon="document-text-outline" title="Terms & Conditions" subtitle="Read our terms and policies" />
       </View>
 
       <View style={styles.section}>
-        <SettingItem icon="help-circle-outline" title="Help & Support" subtitle="FAQs, Contact support" />
+        <SettingItem icon="help-circle-outline" title="Help & Support" subtitle="FAQs, Contact support" onPress={() => navigation.navigate('HelpSupportScreen')} />
         <SettingItem icon="information-circle-outline" title="About Us" subtitle="Version 1.0, Terms & Conditions" />
         
         <TouchableOpacity onPress={handleLogout} style={styles.logoutRow}>
@@ -92,30 +81,6 @@ const SettingItem = ({ icon, title, subtitle, onPress }) => (
     </View>
     <Icon name="chevron-forward" size={20} color="#ccc" />
   </TouchableOpacity>
-);
-const ToggleSettingItem = ({ icon, title, value, onValueChange }) => (
-  <View style={styles.toggleItemRow}>
-    <View style={styles.iconCircle}>
-      <Icon name={icon} size={20} color="#4b6cb7" />
-    </View>
-    <Text style={styles.itemTitle}>{title}</Text>
-    
-    <TouchableOpacity
-      activeOpacity={0.8}
-      style={[
-        styles.customSwitch,
-        { backgroundColor: value ? '#4b6cb7' : '#ccc' }
-      ]}
-      onPress={() => onValueChange(!value)}
-    >
-      <View
-        style={[
-          styles.customThumb,
-          { alignSelf: value ? 'flex-end' : 'flex-start' }
-        ]}
-      />
-    </TouchableOpacity>
-  </View>
 );
 
 const styles = StyleSheet.create({
