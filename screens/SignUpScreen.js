@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState ,useEffect} from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import firestore from '@react-native-firebase/firestore';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
+import CountryPicker from 'react-native-country-picker-modal';
 
 const colleges = ['ARP', 'CMPICA', 'CSPIT', 'DEPSTAR', 'IIIM', 'MTIN', 'PDPIAS', 'RPCP'];
 const semesters = ['1', '2', '3', '4', '5', '6', '7', '8'];
@@ -33,13 +34,17 @@ const SignUpScreen = () => {
   const [selectedCollege, setSelectedCollege] = useState('');
   const [selectedSem, setSelectedSem] = useState('');
   const [errors, setErrors] = useState({});
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [countryCode, setCountryCode] = useState('IN');
+  const [callingCode, setCallingCode] = useState('91');
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
 
   const onRegister = async () => {
     const newErrors = {};
 
     if (!name) newErrors.name = 'Full name is required';
     if (!email) newErrors.email = 'Email is required';
-    else if (!email.endsWith('@charusat.edu.in')) newErrors.email = 'Use CHARUSAT email only';
+    else if (!email.endsWith('@gmail.com')) newErrors.email = 'Use gmail only';
     if (!password) newErrors.password = 'Password is required';
     if (!course) newErrors.course = 'Branch is required';
     if (!contact) newErrors.contact = 'Contact number is required';
@@ -61,7 +66,7 @@ const SignUpScreen = () => {
         name,
         email,
         course,
-        contact,
+        contact: `+${callingCode}${contact}`,
         college: selectedCollege,
         semester: selectedSem,
         createdAt: firestore.Timestamp.now(),
@@ -69,10 +74,12 @@ const SignUpScreen = () => {
       });
 
       await user.sendEmailVerification();
+      // setVerificationSent(true);
+      // setCanResend(false);
 
       Alert.alert(
         'Verify Email',
-        'A verification email has been sent. Please verify with your registered email before logging in.'
+        'Verification email is sent to your registered Email id. Click on Link to Verify.'
       );
 
       navigation.navigate('LoginScreen');
@@ -83,6 +90,31 @@ const SignUpScreen = () => {
         setErrors({ email: 'That email address is invalid!' });
       } else {
         Alert.alert('Error', err.message);
+      }
+    }
+  };
+
+  const handleResendVerification = async () => {
+    const user = auth().currentUser;
+    if (user && !user.emailVerified) {
+      try {
+        await user.sendEmailVerification();
+        setCanResend(false);
+  
+        let interval = setInterval(() => {
+          setTimer((prev) => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              setCanResend(true);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+  
+        Alert.alert('Verification Email Resent', 'Check your inbox again.');
+      } catch (err) {
+        Alert.alert('Error', 'Unable to resend verification email.');
       }
     }
   };
@@ -102,7 +134,42 @@ const SignUpScreen = () => {
         keyboardType={keyboardType}
         secureTextEntry={secure}
         maxLength={keyboardType === 'phone-pad' ? 10 : undefined}
-          selectionColor="#7f89b0"
+        selectionColor="#7f89b0"
+      />
+    </View>
+  );
+
+  // Custom contact field with country picker
+  const renderContactField = () => (
+    <View style={[styles.inputWrapper, errors['contact'] && styles.inputError]}> 
+      <TouchableOpacity onPress={() => setShowCountryPicker(true)} style={styles.countryPickerBtn}>
+        <CountryPicker
+          countryCode={countryCode}
+          withFlag
+          withCallingCode
+          withFilter
+          withEmoji
+          onSelect={country => {
+            setCountryCode(country.cca2);
+            setCallingCode(country.callingCode[0]);
+          }}
+          visible={showCountryPicker}
+          onClose={() => setShowCountryPicker(false)}
+        />
+        <Text style={styles.countryCodeText}>+{callingCode}</Text>
+      </TouchableOpacity>
+      <TextInput
+        placeholder="Contact Number"
+        placeholderTextColor="#7f89b0"
+        style={styles.input}
+        value={contact}
+        onChangeText={(text) => {
+          setContact(text);
+          setErrors({ ...errors, contact: null });
+        }}
+        keyboardType="phone-pad"
+        maxLength={10}
+        selectionColor="#7f89b0"
       />
     </View>
   );
@@ -138,10 +205,10 @@ const SignUpScreen = () => {
             {renderInputField('user', 'Full Name', name, setName, 'name')}
             {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
-            {renderInputField('phone', 'Contact Number', contact, setContact, 'contact', 'phone-pad')}
+            {renderContactField()}
             {errors.contact && <Text style={styles.errorText}>{errors.contact}</Text>}
 
-            {renderInputField('envelope', 'user@charusat.edu.in', email, setEmail, 'email', 'email-address')}
+            {renderInputField('envelope', 'user@gmail.com', email, setEmail, 'email', 'email-address')}
             {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
             {renderInputField('lock', 'Password', password, setPassword, 'password', 'default', true)}
@@ -160,9 +227,14 @@ const SignUpScreen = () => {
               <Text style={styles.buttonText}>Register</Text>
             </TouchableOpacity>
 
-          </View>
-        
-        <Text style={styles.terms}>
+            {/* <TouchableOpacity onPress={handleResendVerification}>
+                <Text style={{ color: '#4B6CB7', fontWeight: 'bold' }}>
+                  Resend Verification Email
+                </Text>
+            </TouchableOpacity> */}
+
+
+            <Text style={styles.terms}>
               By signing up, you agree to our <Text style={styles.link}>Terms</Text> & <Text style={styles.link}>Privacy Policy</Text>.
             </Text>
 
@@ -172,7 +244,10 @@ const SignUpScreen = () => {
                 <Text style={styles.logintext}> Login</Text>
               </TouchableOpacity>
             </View>
-            </ScrollView>
+
+          </View>
+  
+         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -189,8 +264,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 25,
-    padding: 20,
-    maxWidth: 350,
+    padding: 22,
+    maxWidth: 330,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -216,7 +291,7 @@ const styles = StyleSheet.create({
     borderColor: '#7f89b0',
     borderRadius: 30,
     paddingHorizontal: 12,
-    marginTop: 15,
+    marginTop: 12,
     backgroundColor: '#fff',
     elevation: 2,
   },
@@ -225,13 +300,14 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    paddingVertical: 15,
+    paddingVertical: 10,
     fontSize: 15,
     color: '#000',
   },
   picker: {
     flex: 1,
-    height: 50,
+    height: 48,              // Same height as TextInput container
+    paddingVertical: 10,  
   },
   button: {
     backgroundColor: '#4B6CB7',
@@ -258,7 +334,7 @@ const styles = StyleSheet.create({
   bottomRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 8,
+    marginTop: 7,
   },
   bottomText: {
     fontSize: 14,
@@ -283,6 +359,20 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginLeft: 10,
     fontSize: 12,
+  },
+  countryPickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+    paddingRight: 4,
+    paddingLeft: 0,
+  },
+  countryCodeText: {
+    fontSize: 15,
+    color: '#000',
+    marginLeft: 2,
+    marginRight: 2,
+    fontWeight: 'bold',
   },
 });
 

@@ -29,12 +29,14 @@ const LoginScreen = () => {
   const [passwordError, setPasswordError] = useState('');
   const [secure, setSecure] = useState(true);
   const navigation = useNavigation();
+  const [isSending, setIsSending] = useState(false);
+
 
   useEffect(() => {
     GoogleSignin.configure({
       webClientId: '925395177236-rlup1ghbi07fri5bgec56obk5bga540v.apps.googleusercontent.com',
       forceCodeForRefreshToken: true,
-      hostedDomain: 'charusat.edu.in',
+      // hostedDomain: 'gmail.com',
     });
   }, []);
 
@@ -95,8 +97,8 @@ const LoginScreen = () => {
     if (!email) {
       setEmailError('Email is required');
       isValid = false;
-    } else if (!email.endsWith('@charusat.edu.in')) {
-      setEmailError('Use your CHARUSAT email ID');
+    } else if (!email.endsWith('@gmail.com')) {
+      setEmailError('Use your Gmail ID');
       isValid = false;
     }
   
@@ -124,29 +126,38 @@ const LoginScreen = () => {
           'Please verify your email before logging in.',
           [
             {
-              text: 'Resend Email',
+              text: isSending ? 'Sending...' : 'Resend Email',
               onPress: async () => {
-                await user.sendEmailVerification();
-                Alert.alert('Verification email resent');
+                if (isSending) return;
+      
+                setIsSending(true);
+                try {
+                  const tempUser = await auth().signInWithEmailAndPassword(email, password);
+                  if (tempUser?.user && !tempUser.user.emailVerified) {
+                    await tempUser.user.sendEmailVerification();
+                    Alert.alert('Verification Email Sent', 'Please check your inbox/Spam.');
+                  } else {
+                    Alert.alert('Already Verified', 'Please try logging in again.');
+                  }
+                } catch (error) {
+                  Alert.alert('Error', error.message);
+                }
+                setIsSending(false);
+                await auth().signOut();
               },
             },
             { text: 'OK' },
           ]
         );
-        await auth().signOut(); // this triggers App.js to show LoginScreen again
+        await auth().signOut();
         return;
       }
-  
+      
       Toast.show({
         type: 'success',
         text1: 'Logged in successfully!',
         position: 'bottom',
       });
-      setTimeout(async () => {
-      await auth().signOut();
-      await auth().signInWithEmailAndPassword(email, password);
-    }, 1000);
-
   
       // ✅ No need to navigate manually — App.js will take over and show HomeScreen
     } catch (err) {
@@ -163,20 +174,34 @@ const LoginScreen = () => {
   };
   
 
-  const onForgotPassword = () => {
+  const onForgotPassword = async () => {
     if (!email) {
-      Alert.alert('Enter your email to reset password');
+      Alert.alert('Missing Email', 'Please enter your email to reset password.');
       return;
     }
-    auth()
-      .sendPasswordResetEmail(email)
-      .then(() => {
-        Alert.alert('Password reset email sent!');
-      })
-      .catch(error => {
+  
+    if (!email.endsWith('@gmail.com')) {
+      Alert.alert('Invalid Email', 'Please enter a valid gmail ID.');
+      return;
+    }
+  
+    try {
+      await auth().sendPasswordResetEmail(email);
+      Alert.alert(
+        'Email Sent',
+        'A password reset link has been sent to your email address.'
+      );
+    } catch (error) {
+      if (error.code === 'auth/user-not-found') {
+        Alert.alert('User Not Found', 'No account found with this email.');
+      } else if (error.code === 'auth/invalid-email') {
+        Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      } else {
         Alert.alert('Error', error.message);
-      });
+      }
+    }
   };
+  
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -188,7 +213,7 @@ const LoginScreen = () => {
           <View style={[styles.inputContainer, emailError && { borderColor: 'red' }]}>
             <FontAwesome name="envelope" size={14} color="#7f89b0" style={styles.icon} />
             <TextInput
-              placeholder="user@charusat.edu.in"
+              placeholder="user@gmail.com"
               placeholderTextColor="#7f89b0"
               style={styles.inputBox}
               value={email}
@@ -224,9 +249,20 @@ const LoginScreen = () => {
           </View>
           {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
-          <TouchableOpacity onPress={onForgotPassword}>
-            <Text style={styles.forgot}>Forgot password</Text>
+          <TouchableOpacity
+            onPress={onForgotPassword}
+            disabled={!email || !email.endsWith('@gmail.com')}
+          >
+            <Text
+              style={[
+                styles.forgot,
+                (!email || !email.endsWith('@gmail.com')) && { color: '#bbb' },
+              ]}
+            >
+              Forgot password
+            </Text>
           </TouchableOpacity>
+
 
           <TouchableOpacity style={styles.login} onPress={onLogin}>
             <Text style={styles.loginText}>Sign in</Text>

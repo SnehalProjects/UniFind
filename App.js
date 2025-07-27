@@ -13,6 +13,12 @@ import LoginScreen from './screens/LoginScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import DrawerScreen from './screens/DrawerScreen';
 import SettingScreen from './screens/SettingScreen';
+import ChangePassScreen from './screens/ChangePassScreen';
+import ForgotPassScreen from './screens/ForgotPassScreen';
+import HelpSupportScreen from './screens/HelpSupportScreen';
+import FAQScreen from './screens/FAQScreen';
+import AboutUsScreen from './screens/AboutUsScreen';
+import DeleteAccountScreen from './screens/DeleteAccountScreen';
 import CompleteProfileScreen from './screens/CompleteProfileScreen';
 import PostItemScreen from './screens/PostItemScreen';
 import LostItemsScreen from './screens/LostItemScreen';
@@ -51,6 +57,12 @@ const App = () => {
               <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
               <Stack.Screen name="DrawerScreen" component={DrawerScreen} />
               <Stack.Screen name="SettingScreen" component={SettingScreen} />
+              <Stack.Screen name="ChangePassScreen" component={ChangePassScreen} />
+              <Stack.Screen name="ForgotPassScreen" component={ForgotPassScreen} />
+              <Stack.Screen name="HelpSupportScreen" component={HelpSupportScreen} />
+              <Stack.Screen name="FAQScreen" component={FAQScreen} />
+              <Stack.Screen name="AboutUsScreen" component={AboutUsScreen} />
+              <Stack.Screen name="DeleteAccountScreen" component={DeleteAccountScreen} />
               <Stack.Screen name="CompleteProfileScreen" component={CompleteProfileScreen} />
               <Stack.Screen name="PostItem" component={PostItemScreen} />
               <Stack.Screen name="LostItems" component={LostItemsScreen} />
