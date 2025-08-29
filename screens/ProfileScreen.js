@@ -17,6 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import LottieView from 'lottie-react-native';
 
 const colleges = ['ARP', 'CMPICA', 'CSPIT', 'DEPSTAR', 'IIIM', 'MTIN', 'PDPIAS', 'RPCP'];
 const semesters = ['1', '2', '3', '4', '5', '6', '7', '8'];
@@ -131,7 +132,17 @@ const ProfileScreen = () => {
   };
 
   if (loading || !userData) {
-    return <ActivityIndicator size="large" style={{ marginTop: hp('20%') }} />;
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#cfd8ee' }}>
+        <LottieView
+          source={require('../assets/Searching-animation.json')}
+          autoPlay
+          loop
+          style={{ width: 150, height: 150 }}
+        />
+        <Text style={{ marginTop: 18, color: '#374151', fontWeight: 'bold', fontSize: wp('4.5%') }}>Loading your profile...</Text>
+      </View>
+    );
   }
 
 const ContainerComponent = isEditing ? ScrollView : View;

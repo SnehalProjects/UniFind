@@ -20,6 +20,7 @@ import FAQScreen from './screens/FAQScreen';
 import AboutUsScreen from './screens/AboutUsScreen';
 import DeleteAccountScreen from './screens/DeleteAccountScreen';
 import CompleteProfileScreen from './screens/CompleteProfileScreen';
+import ProfileLoadingScreen from './screens/ProfileLoadingScreen';
 import PostItemScreen from './screens/PostItemScreen';
 import LostItemsScreen from './screens/LostItemScreen';
 import FoundItemsScreen from './screens/FoundItemScreen';
@@ -53,6 +54,7 @@ const App = () => {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {user && isEmailVerified ? (
             <>
+              <Stack.Screen name="ProfileLoadingScreen" component={ProfileLoadingScreen} />
               <Stack.Screen name="HomeScreen" component={HomeScreen} />
               <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
               <Stack.Screen name="DrawerScreen" component={DrawerScreen} />

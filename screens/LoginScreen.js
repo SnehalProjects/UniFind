@@ -66,7 +66,7 @@ const LoginScreen = () => {
           Alert.alert('Complete Profile', 'Please finish setting up your profile.');
           navigation.navigate('CompleteProfileScreen');
         } else {
-          navigation.navigate('HomeScreen');
+          // App.js will automatically show ProfileLoadingScreen for authenticated users
         }
       } else {
         await firestore().collection('users').doc(uid).set({
@@ -159,7 +159,7 @@ const LoginScreen = () => {
         position: 'bottom',
       });
   
-      // ✅ No need to navigate manually — App.js will take over and show HomeScreen
+      // App.js will automatically show ProfileLoadingScreen for authenticated users
     } catch (err) {
       if (err.code === 'auth/user-not-found') {
         setEmailError('No user found with this email');

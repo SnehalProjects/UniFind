@@ -27,6 +27,7 @@
     "crypto-js": "^4.2.0",
     "libphonenumber-js": "^1.12.10",
     "lottie-ios": "^4.5.1",
+    "lottie-react-native": "^7.2.4",
     "lucide-react-native": "^0.515.0",
     "react": "19.1.0",
     "react-native": "0.80.0",
