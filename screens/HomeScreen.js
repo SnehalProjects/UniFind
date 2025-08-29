@@ -10,10 +10,13 @@ import {
   Image,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import firestore from '@react-native-firebase/firestore';
+import { getFirestore, collection, doc, getDoc, getDocs, query, where, orderBy, limit, onSnapshot } from '@react-native-firebase/firestore';
+import { getAuth } from '@react-native-firebase/auth';
+import { getApp } from '@react-native-firebase/app';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import DrawerModal from '../screens/DrawerModal'
-import auth from '@react-native-firebase/auth';
+import LoadingAnimation from '../components/LoadingAnimation';
+import EmptyStateAnimation from '../components/EmptyStateAnimation';
 
 const { width } = Dimensions.get('window');
 
@@ -23,17 +26,23 @@ const HomeScreen = () => {
   const [isDrawerVisible, setDrawerVisible] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const app = getApp();
+  const firestore = getFirestore(app);
+  const auth = getAuth(app);
 
 useFocusEffect(
     useCallback(() => {
       const fetchProfileImage = async () => {
-        const user = auth().currentUser;
+        const user = auth.currentUser;
         if (!user) return;
 
         try {
-          const doc = await firestore().collection('users').doc(user.uid).get();
-          if (doc.exists) {
-            const data = doc.data();
+          const docRef = doc(firestore, 'users', user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists) {
+            const data = docSnap.data();
             setProfileImage(data?.profileImage || null);
           }
         } catch (err) {
@@ -46,17 +55,22 @@ useFocusEffect(
   );
 
   useEffect(() => {
-    const unsubscribe = firestore()
-      .collection('items')
-      .orderBy('createdAt', 'desc')
-      .limit(10)
-      .onSnapshot(snapshot => {
+    setLoading(true);
+    const unsubscribe = onSnapshot(
+      query(collection(firestore, 'items'), orderBy('createdAt', 'desc'), limit(10)),
+      (snapshot) => {
         const items = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
         }));
         setRecentPosts(items);
-      });
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching posts:', error);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe(); 
   }, []);
@@ -136,9 +150,19 @@ useFocusEffect(
 
         {/* Recent Posts */}
         <Text style={styles.sectionTitle}>Recent Posts</Text>
-        <View style={styles.cardRowWrap}>
-          {filteredPosts.length === 0 ? (
+        
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <LoadingAnimation 
+              style={styles.loadingAnimation}
+            />
+            <Text style={styles.loadingText}>Loading recent posts...</Text>
+          </View>
+        ) : filteredPosts.length === 0 ? (
             <View style={styles.noPostsContainer}>
+            <EmptyStateAnimation 
+              style={styles.emptyAnimation}
+            />
               <Text style={styles.noPostsTitle}>No posts found</Text>
               <Text style={styles.noPostsSubtitle}>
                 Be the first to post an item!
@@ -175,7 +199,6 @@ useFocusEffect(
               ))}
             </View>
           )}
-        </View>
       </ScrollView>
 
       {/* Floating Button */}
@@ -376,6 +399,23 @@ noPostsSubtitle: {
   color: '#777',
   marginTop: 4,
 },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 30,
+  },
+  loadingAnimation: {
+    marginBottom: 15,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#4B6CB7',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  emptyAnimation: {
+    marginBottom: 15,
+  },
 
 });
 

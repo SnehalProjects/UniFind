@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-
+ 
 const { width, height } = Dimensions.get('window');
 
 const HelpSupportScreen = ({ navigation }) => {

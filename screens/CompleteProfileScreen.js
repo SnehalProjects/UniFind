@@ -10,8 +10,8 @@ import {
   Image,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+import { getAuth } from '@react-native-firebase/auth';
+import { getFirestore, doc, getDoc, setDoc } from '@react-native-firebase/firestore';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
@@ -50,19 +50,19 @@ const uploadImageToImgbb = async (imageUri) => {
 
 const CompleteProfileScreen = () => {
   
-  const user = auth().currentUser;
+  const auth = getAuth();
   const navigation = useNavigation();
   const [imageUri, setImageUri] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
 
   const [data, setData] = useState({
-    name: user?.displayName || '',
-    email: user?.email || '',
+    name: auth.currentUser?.displayName || '',
+    email: auth.currentUser?.email || '',
     course: '',
     contact: '',
     college: '',
     semester: '',
-    profileImage: user?.photoURL || '',
+    profileImage: auth.currentUser?.photoURL || '',
   });
 
   const [uploading, setUploading] = useState(false);
@@ -85,7 +85,7 @@ const CompleteProfileScreen = () => {
 
   const handleSave = async () => {
     const { name, email, course, contact, college, semester } = data;
-    const uid = auth().currentUser?.uid;
+    const uid = auth.currentUser?.uid;
 
     if (!course || !contact || !college || !semester) {
       Alert.alert('Incomplete Profile', 'Please fill in all the required fields.');
@@ -118,7 +118,7 @@ const CompleteProfileScreen = () => {
         createdAt: firestore.FieldValue.serverTimestamp(),
       };
 
-      await firestore().collection('users').doc(uid).set(updatedData);
+      await setDoc(doc(firestore, 'users', uid), updatedData);
 
       Alert.alert('Success', 'Profile completed!');
       navigation.navigate('HomeScreen');

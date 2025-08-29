@@ -8,26 +8,35 @@ import {
   TouchableOpacity,
   navigation,
 } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
+import { getApp } from '@react-native-firebase/app';
+import { getFirestore, collection, query, where, orderBy, getDocs } from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import LoadingAnimation from '../components/LoadingAnimation';
+import EmptyStateAnimation from '../components/EmptyStateAnimation';
 
 const LostItemsScreen = () => {
   const navigation = useNavigation();
   const [lostItems, setLostItems] = useState([]);
+  const [loading, setLoading] = useState(true);
  
   useEffect(() => {
-    firestore()
-      .collection('items')
-      .where('itemType', '==', 'Lost')
-      .orderBy('createdAt', 'desc')
-      .get({ source: 'server' })
+    setLoading(true);
+    const app = getApp();
+    const firestore = getFirestore(app);
+    const itemsCollection = collection(firestore, 'items');
+    const q = query(itemsCollection, where('itemType', '==', 'Lost'), orderBy('createdAt', 'desc'));
+
+    getDocs(q)
       .then(snapshot => {
         const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setLostItems(items);
       })
       .catch(error => {
         console.error('Error fetching from server:', error);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   }, []);
 
@@ -82,17 +91,32 @@ const LostItemsScreen = () => {
       <Text style={styles.subtitle}>
         Help people find their lost belongings
       </Text>
-      {lostItems.length === 0 && (
-        <Text style={{ textAlign: 'center', marginTop: 50 }}>
-          No lost items found or you're offline.
+      
+              {loading ? (
+          <View style={styles.centerContainer}>
+            <LoadingAnimation 
+              style={styles.loadingAnimation}
+            />
+            <Text style={styles.loadingText}>Loading lost items...</Text>
+          </View>
+        ) : lostItems.length === 0 ? (
+          <View style={styles.centerContainer}>
+            <EmptyStateAnimation 
+              style={styles.emptyAnimation}
+            />
+            <Text style={styles.emptyTitle}>No Lost Items Found</Text>
+            <Text style={styles.emptySubtitle}>
+              No lost items have been posted yet. Be the first to help someone find their belongings!
         </Text>
-      )}
+          </View>
+      ) : (
       <FlatList
         data={lostItems}
         keyExtractor={item => item.id}
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 20 }}
       />
+      )}
     </View>
   );
 };
@@ -193,6 +217,37 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#888',
     fontSize: 13,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingAnimation: {
+    marginBottom: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#4B6CB7',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  emptyAnimation: {
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   deleteBtn: {
     // removed

@@ -9,8 +9,8 @@ import {
   Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+import { getAuth } from '@react-native-firebase/auth';
+import { getFirestore, doc, getDoc } from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
@@ -23,13 +23,15 @@ const DrawerScreen = ({ closeDrawer }) => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const currentUser = auth().currentUser;
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
       if (!currentUser) return;
 
       try {
-        const doc = await firestore().collection('users').doc(currentUser.uid).get();
-        if (doc.exists()) {
-          setUserData(doc.data());
+        const docRef = doc(getFirestore(), 'users', currentUser.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setUserData(docSnap.data());
         }
       } catch (error) {
         console.error('Error fetching user:', error);
@@ -42,7 +44,8 @@ const DrawerScreen = ({ closeDrawer }) => {
   }, []);
 
   const handleLogout = async () => {
-    await auth().signOut();
+    const auth = getAuth();
+    await auth.signOut();
     await GoogleSignin.signOut();
     navigation.navigate('LoginScreen');
     closeDrawer();

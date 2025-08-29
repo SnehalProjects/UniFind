@@ -12,16 +12,19 @@ import {
   ScrollView,
   TextInput,
 } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
-import auth from '@react-native-firebase/auth';
+import { getApp } from '@react-native-firebase/app';
+import { getFirestore, collection, getDocs, query, where } from '@react-native-firebase/firestore';
+import { getAuth } from '@react-native-firebase/auth';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
+import LoadingAnimation from '../components/LoadingAnimation';
+import EmptyStateAnimation from '../components/EmptyStateAnimation';
 
 const MyPostsScreen = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('Active');
+  const [filter, setFilter] = useState('Active'); // Single-select filter
   const [selectedPost, setSelectedPost] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -31,7 +34,11 @@ const MyPostsScreen = () => {
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const navigation = useNavigation();
 
-  const currentUserEmail = auth().currentUser?.email?.trim().toLowerCase();
+  const app = getApp();
+  const firestore = getFirestore(app);
+  const auth = getAuth(app);
+
+  const currentUserEmail = auth.currentUser?.email?.trim().toLowerCase();
 
   const measureMenuPosition = (event, post) => {
     event.target.measure((x, y, width, height, pageX, pageY) => {
@@ -48,12 +55,8 @@ const MyPostsScreen = () => {
     try {
       if (!currentUserEmail) return;
 
-      const snapshot = await firestore()
-        .collection('items')
-        .where('email', '==', currentUserEmail)
-        .get();
-
-      const allPosts = snapshot.docs.map(doc => ({
+      const snapshot = await query(collection(firestore, 'items'), where('email', '==', currentUserEmail));
+      const allPosts = (await getDocs(snapshot)).docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       }));
@@ -69,12 +72,8 @@ const MyPostsScreen = () => {
       try {
         if (!currentUserEmail) return;
 
-        const snapshot = await firestore()
-          .collection('items')
-          .where('email', '==', currentUserEmail)
-          .get();
-
-        const allPosts = snapshot.docs.map(doc => ({
+        const snapshot = await query(collection(firestore, 'items'), where('email', '==', currentUserEmail));
+        const allPosts = (await getDocs(snapshot)).docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
         }));
@@ -111,67 +110,56 @@ const MyPostsScreen = () => {
   };
 
   const confirmDelete = async () => {
+    if (!selectedPost) return;
     try {
-      await firestore().collection('items').doc(selectedPost.id).delete();
+      await firestore.collection('items').doc(selectedPost.id).delete();
+      setShowDeleteConfirm(false);
+      setSelectedPost(null);
       Toast.show({
         type: 'success',
         text1: 'Post deleted successfully',
-        position: 'bottom',
       });
-      setShowDeleteConfirm(false);
-      setSelectedPost(null);
+      // Refresh posts
       refreshPosts();
     } catch (error) {
-      console.error('Error deleting post:', error);
+      setShowDeleteConfirm(false);
       Toast.show({
         type: 'error',
         text1: 'Failed to delete post',
-        position: 'bottom',
       });
+      console.error('Delete error:', error);
     }
   };
 
   const handleUpdatePost = async () => {
-    if (!editForm.itemName.trim() || !editForm.description.trim() || !editForm.location.trim()) {
-      Toast.show({
-        type: 'error',
-        text1: 'Please fill in all required fields',
-        position: 'bottom',
-      });
-      return;
-    }
-
+    if (!selectedPost) return;
     setIsUpdating(true);
     try {
-      await firestore().collection('items').doc(selectedPost.id).update({
-        itemName: editForm.itemName.trim(),
-        category: editForm.category.trim(),
-        description: editForm.description.trim(),
-        location: editForm.location.trim(),
-        updatedAt: firestore.FieldValue.serverTimestamp(),
-      });
-
-      Toast.show({
-        type: 'success',
-        text1: 'Post updated successfully',
-        position: 'bottom',
+      await firestore.collection('items').doc(selectedPost.id).update({
+        itemName: editForm.itemName,
+        category: editForm.category,
+        description: editForm.description,
+        location: editForm.location,
       });
       setShowEditModal(false);
       setSelectedPost(null);
-      setEditForm({});
+      Toast.show({
+        type: 'success',
+        text1: 'Post updated successfully',
+      });
       refreshPosts();
     } catch (error) {
-      console.error('Error updating post:', error);
       Toast.show({
         type: 'error',
         text1: 'Failed to update post',
-        position: 'bottom',
       });
+      console.error('Update error:', error);
     } finally {
       setIsUpdating(false);
     }
   };
 
+  // Single-select filter logic
   const filteredPosts = posts.filter(item =>
     filter === 'Show All'
       ? true
@@ -254,27 +242,27 @@ const renderItem = ({ item }) => (
         ))}
       </View>
 
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#4B6CB7" />
-        </View>
-      ) : filteredPosts.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Ionicons
-            name="document-text-outline"
-            size={64}
-            color="#CBD5E1"
-            style={{ marginBottom: 16 }}
-          />
-          <Text style={styles.emptyTitle}>No Posts Found</Text>
-          <Text style={styles.emptySubtitle}>
-            You haven't posted any items yet. Start by reporting a lost or found item!
-          </Text>
-          <TouchableOpacity style={styles.postButton} onPress={handlePostItem}>
-            <Ionicons name="add" size={20} color="#fff" />
-            <Text style={styles.postButtonText}>Post an Item</Text>
-          </TouchableOpacity>
-        </View>
+              {loading ? (
+          <View style={styles.center}>
+            <LoadingAnimation 
+              style={styles.loadingAnimation}
+            />
+            <Text style={styles.loadingText}>Loading your posts...</Text>
+          </View>
+        ) : filteredPosts.length === 0 ? (
+          <View style={styles.emptyState}>
+            <EmptyStateAnimation 
+              style={styles.emptyAnimation}
+            />
+            <Text style={styles.emptyTitle}>No Posts Found</Text>
+            <Text style={styles.emptySubtitle}>
+              You haven't posted any items yet. Start by reporting a lost or found item!
+            </Text>
+            <TouchableOpacity style={styles.postButton} onPress={handlePostItem}>
+              <Ionicons name="add" size={20} color="#fff" />
+              <Text style={styles.postButtonText}>Post an Item</Text>
+            </TouchableOpacity>
+          </View>
       ) : (
         <FlatList
           data={filteredPosts}
@@ -296,7 +284,7 @@ const renderItem = ({ item }) => (
           activeOpacity={1}
           onPress={() => setShowMenu(false)}
         >
-          <View style={[styles.menuContainer, { left: menuPosition.x, top: menuPosition.y }]}>
+          <View style={[styles.menuContainer, { left: menuPosition.x, top: menuPosition.y }]}> 
             <View style={styles.menuArrow} />
             <TouchableOpacity style={styles.menuItem} onPress={handleEdit}>
               <Ionicons name="create-outline" size={20} color="#4B6CB7" />
@@ -488,6 +476,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingAnimation: {
+    marginBottom: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#4B6CB7',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  emptyAnimation: {
+    marginBottom: 20,
   },
   emptyState: {
     flex: 1,

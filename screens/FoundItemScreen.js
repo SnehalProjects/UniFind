@@ -1,25 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, Image, StyleSheet,TouchableOpacity} from 'react-native';
-import firestore from '@react-native-firebase/firestore';
+import { getApp } from '@react-native-firebase/app';
+import { getFirestore, collection, query, where, orderBy, getDocs } from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import LoadingAnimation from '../components/LoadingAnimation';
+import EmptyStateAnimation from '../components/EmptyStateAnimation';
 
 const FoundItemsScreen = () => {
   const navigation = useNavigation();
   const [foundItems, setFoundItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    firestore()
-      .collection('items')
-      .where('itemType', '==', 'Found')
-      .orderBy('createdAt', 'desc')
-      .get({ source: 'server' })
+    setLoading(true);
+    const app = getApp();
+    const firestore = getFirestore(app);
+    const itemsCollection = collection(firestore, 'items');
+    const foundItemsQuery = query(itemsCollection, where('itemType', '==', 'Found'), orderBy('createdAt', 'desc'));
+
+    getDocs(foundItemsQuery)
       .then(snapshot => {
         const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setFoundItems(items);
       })
       .catch(error => {
         console.error('Error fetching from server:', error);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   }, []);
 
@@ -69,17 +78,32 @@ const FoundItemsScreen = () => {
         <Text style={styles.title}>Found Items</Text>
       </View>
       <Text style={styles.subtitle}>Items waiting to be reunited with their owners</Text>
-      {foundItems.length === 0 && (
-        <Text style={{ textAlign: 'center', marginTop: 50 }}>
-          No items found or you're offline.
+      
+              {loading ? (
+          <View style={styles.centerContainer}>
+            <LoadingAnimation 
+              style={styles.loadingAnimation}
+            />
+            <Text style={styles.loadingText}>Loading found items...</Text>
+          </View>
+        ) : foundItems.length === 0 ? (
+          <View style={styles.centerContainer}>
+            <EmptyStateAnimation 
+              style={styles.emptyAnimation}
+            />
+            <Text style={styles.emptyTitle}>No Found Items</Text>
+            <Text style={styles.emptySubtitle}>
+              No found items have been posted yet. Be the first to help reunite someone with their belongings!
         </Text>
-      )}
+          </View>
+      ) : (
       <FlatList
         data={foundItems}
         keyExtractor={item => item.id}
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 20 }}
       />
+      )}
     </View>
   );
 };
@@ -205,6 +229,37 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingAnimation: {
+    marginBottom: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#4B6CB7',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  emptyAnimation: {
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 

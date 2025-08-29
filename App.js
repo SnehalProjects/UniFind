@@ -16,6 +16,10 @@ import DrawerScreen from './screens/DrawerScreen.js';
 import MyPostsScreen from './screens/MyPostsScreen';
 import SettingScreen from './screens/SettingScreen';
 import CompleteProfileScreen from './screens/CompleteProfileScreen';
+import ChangePassScreen from './screens/ChangePassScreen';
+import ForgotPassScreen from './screens/ForgotPassScreen';
+import AboutUsScreen from './screens/AboutUsScreen';
+import DeleteAccountScreen from './screens/DeleteAccountScreen';
 import HelpSupportScreen from './screens/HelpSupportScreen';
 import FAQScreen from './screens/FAQScreen';
 
@@ -55,8 +59,12 @@ export default function App() {
           <Stack.Screen name="SettingScreen" component={SettingScreen} />
           <Stack.Screen name="MyPostsScreen" component={MyPostsScreen} />
           <Stack.Screen name="CompleteProfileScreen" component={CompleteProfileScreen} />
+          <Stack.Screen name="ChangePassScreen" component={ChangePassScreen} />
+          <Stack.Screen name="ForgotPassScreen" component={ForgotPassScreen} />
+          <Stack.Screen name="AboutUsScreen" component={AboutUsScreen} />
           <Stack.Screen name="HelpSupportScreen" component={HelpSupportScreen} />
           <Stack.Screen name="FAQScreen" component={FAQScreen} />
+          <Stack.Screen name="DeleteAccountScreen" component={DeleteAccountScreen} />
         </Stack.Navigator>
         <Toast />
       </NavigationContainer>

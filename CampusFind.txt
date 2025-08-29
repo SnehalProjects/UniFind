@@ -4,27 +4,23 @@ Admin dashboard??
 
 2. container bottom full 
 
-3. lotty animation in loading.
+3. lotty animation in loading. ✅
 
 4. auto remove in 15 days.
 
 5. images to firestore? or imgbb
 
-6. resend email
+6. resend email - email send thaya pachi 2 min timer then resend option
 
-7. phone aado thay toy ui na hale.
+7. phone aado thay toy ui na hale. ✅
 
 8. camera upload //optional
 
-9. push notification
+10. FAQ Screen
 
-10. feedback option in setting / or biju kaik rakhvanu chhe
+12. help and support  - after submit report sent to support mail
 
-11. dark mode theme
-
-12. help and support
-
-13. about us
+13. delete an account
 
 14. if email exist na kare to proper error msg aavu pade.
 
@@ -34,11 +30,11 @@ Admin dashboard??
 
 17. sign in not redirecting on home scree.
 
-18. back karu to saav login screen par vai jay.
+18. back karu to saav login screen na par vai jay.
 
 19. responsive 
 
-20. my post - all and show all replace.
+20. my post - all and show all replace. ✅
 
 21. image share with photo?
 
@@ -51,6 +47,10 @@ Admin dashboard??
 25. user can apply multiple filter active + lost
 
 26. red error in help and support
+
+27. remove bell icon from setting 
+
+28. all header title should contain one color
 
 Q. dropdown badhe batavu saru lagse?
 

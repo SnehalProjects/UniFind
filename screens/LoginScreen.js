@@ -29,6 +29,8 @@ const LoginScreen = () => {
   const [passwordError, setPasswordError] = useState('');
   const [secure, setSecure] = useState(true);
   const navigation = useNavigation();
+  const [isSending, setIsSending] = useState(false);
+
 
   useEffect(() => {
     GoogleSignin.configure({
@@ -124,29 +126,38 @@ const LoginScreen = () => {
           'Please verify your email before logging in.',
           [
             {
-              text: 'Resend Email',
+              text: isSending ? 'Sending...' : 'Resend Email',
               onPress: async () => {
-                await user.sendEmailVerification();
-                Alert.alert('Verification email resent');
+                if (isSending) return;
+      
+                setIsSending(true);
+                try {
+                  const tempUser = await auth().signInWithEmailAndPassword(email, password);
+                  if (tempUser?.user && !tempUser.user.emailVerified) {
+                    await tempUser.user.sendEmailVerification();
+                    Alert.alert('Verification Email Sent', 'Please check your inbox/Spam.');
+                  } else {
+                    Alert.alert('Already Verified', 'Please try logging in again.');
+                  }
+                } catch (error) {
+                  Alert.alert('Error', error.message);
+                }
+                setIsSending(false);
+                await auth().signOut();
               },
             },
             { text: 'OK' },
           ]
         );
-        await auth().signOut(); // this triggers App.js to show LoginScreen again
+        await auth().signOut();
         return;
       }
-  
+      
       Toast.show({
         type: 'success',
         text1: 'Logged in successfully!',
         position: 'bottom',
       });
-      setTimeout(async () => {
-      await auth().signOut();
-      await auth().signInWithEmailAndPassword(email, password);
-    }, 1000);
-
   
       // ✅ No need to navigate manually — App.js will take over and show HomeScreen
     } catch (err) {
@@ -424,4 +435,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LoginScreen;
+export default LoginScreen;

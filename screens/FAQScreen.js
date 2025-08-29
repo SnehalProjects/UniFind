@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 
+
 const { width } = Dimensions.get('window');
 
 const FAQ_DATA = [
@@ -83,6 +84,9 @@ const FAQScreen = () => {
           <Icon name="chevron-back" size={28} color="#374151" />
         </TouchableOpacity>
       </View>
+      <View style={styles.lottieWrap}>
+        <Icon name="help-circle-outline" size={width * 0.32} color="#4B6CB7" style={{ textShadowColor: '#b0b8c1', textShadowRadius: 8 }} />
+      </View>
       <Text style={styles.header}>{`Frequently Asked Questions`}</Text>
       <View style={styles.divider} />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -129,9 +133,6 @@ const FAQScreen = () => {
             )}
           </View>
         ))}
-        <TouchableOpacity style={styles.submitBtn}>
-          <Text style={styles.submitBtnText}>Submit your Question</Text>
-        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -154,15 +155,21 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 8,
   },
+  lottieWrap: {
+    alignItems: 'center',
+    marginTop: 0,
+    marginBottom: 0,
+  },
   header: {
-    fontSize: 22,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '700',
     color: '#23272f',
     marginBottom: 10,
     paddingHorizontal: width * 0.07,
     marginTop: 8,
     textAlign: 'left',
     alignSelf: 'flex-start',
+    letterSpacing: 0.2,
   },
   divider: {
     width: '100%',
@@ -180,24 +187,25 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   sectionCard: {
-    backgroundColor: '#f5f6fa',
-    borderRadius: 14,
-    paddingVertical: 13,
-    paddingHorizontal: 16,
+    backgroundColor: '#eaf0f8',
+    borderRadius: 16,
+    paddingVertical: 15,
+    paddingHorizontal: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
     shadowColor: '#b0b8c1',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOpacity: 0.10,
+    shadowRadius: 8,
+    elevation: 3,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
     color: '#23272f',
+    letterSpacing: 0.1,
   },
   arrowIcon: {
     marginLeft: 10,
@@ -210,18 +218,18 @@ const styles = StyleSheet.create({
   },
   qCard: {
     backgroundColor: '#f8fafc',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 7,
     shadowColor: '#b0b8c1',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.07,
-    shadowRadius: 3,
-    elevation: 1,
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   qText: {
     fontSize: 15,
@@ -245,23 +253,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#4b5563',
     lineHeight: 20,
-  },
-  submitBtn: {
-    backgroundColor: '#386b81',
-    borderRadius: 30,
-    paddingVertical: 13,
-    paddingHorizontal: 25,
-    alignItems: 'center',
-    marginTop: 22,
-    width: '93%',
-    alignSelf: 'center',
-    elevation: 2,
-  },
-  submitBtnText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
-    letterSpacing: 0.2,
   },
 });
 

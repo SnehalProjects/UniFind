@@ -13,11 +13,13 @@ import {
   ActivityIndicator,
   ImageBackground,
 } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
+import { getApp } from '@react-native-firebase/app';
+import { getFirestore, collection, doc, getDoc, getDocs, query, where } from '@react-native-firebase/firestore';
+import { getAuth } from '@react-native-firebase/auth';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import auth from '@react-native-firebase/auth';
 import Dialog from 'react-native-dialog';
 import { useNavigation } from '@react-navigation/native';
+import LoadingAnimation from '../components/LoadingAnimation';
 
 const ItemDetailScreen = ({ route }) => {
   const { item, postId } = route.params;
@@ -26,7 +28,10 @@ const ItemDetailScreen = ({ route }) => {
   const [status, setStatus] = useState(item?.status || 'Active');
   const [dialogVisible, setDialogVisible] = useState(false);
   const [claimEmail, setClaimEmail] = useState('');
-  const currentUserEmail = auth().currentUser?.email;
+  const app = getApp();
+  const firestore = getFirestore(app);
+  const auth = getAuth(app);
+  const currentUserEmail = auth.currentUser?.email;
   const [claimedUserData, setClaimedUserData] = useState(null);
   const navigation = useNavigation();
   const [showFullImage, setShowFullImage] = useState(false);
@@ -38,9 +43,10 @@ const ItemDetailScreen = ({ route }) => {
       if (postId && !item) {
         try {
           setLoading(true);
-          const doc = await firestore().collection('items').doc(postId).get();
-          if (doc.exists) {
-            const data = { id: doc.id, ...doc.data() };
+          const docRef = doc(firestore, 'items', postId);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists) {
+            const data = { id: docSnap.id, ...docSnap.data() };
             setItemData(data);
             setStatus(data.status || 'Active');
           } else {
@@ -64,10 +70,9 @@ const ItemDetailScreen = ({ route }) => {
     const fetchPoster = async () => {
       if (!itemData?.email) return;
       try {
-        const snapshot = await firestore()
-          .collection('users')
-          .where('email', '==', itemData.email)
-          .get();
+        const snapshot = await getDocs(
+          query(collection(firestore, 'users'), where('email', '==', itemData.email))
+        );
 
         if (!snapshot.empty) {
           setPosterData(snapshot.docs[0].data());
@@ -84,10 +89,9 @@ const ItemDetailScreen = ({ route }) => {
     const fetchClaimedUser = async () => {
       if (!itemData?.claimedBy) return;
       try {
-        const snapshot = await firestore()
-          .collection('users')
-          .where('email', '==', itemData.claimedBy)
-          .get();
+        const snapshot = await getDocs(
+          query(collection(firestore, 'users'), where('email', '==', itemData.claimedBy))
+        );
 
         if (!snapshot.empty) {
           setClaimedUserData(snapshot.docs[0].data());
@@ -108,10 +112,9 @@ const ItemDetailScreen = ({ route }) => {
 
     try {
       // Check if this email exists in users
-      const snapshot = await firestore()
-        .collection('users')
-        .where('email', '==', claimEmail.trim())
-        .get();
+      const snapshot = await getDocs(
+        query(collection(firestore, 'users'), where('email', '==', claimEmail.trim()))
+      );
 
       if (snapshot.empty) {
         Alert.alert('User Not Found', 'No user with this email exists.');
@@ -119,13 +122,10 @@ const ItemDetailScreen = ({ route }) => {
       }
 
       // Update status in Firestore
-      await firestore()
-        .collection('items') // or your collection name
-        .doc(itemData.id)
-        .update({
-          status: itemData.itemType === 'Lost' ? 'Claimed' : 'Returned',
-          claimedBy: claimEmail.trim(),
-        });
+      await firestore.collection('items').doc(itemData.id).update({
+        status: itemData.itemType === 'Lost' ? 'Claimed' : 'Returned',
+        claimedBy: claimEmail.trim(),
+      });
 
       // Update local state
       setStatus(itemData.itemType === 'Lost' ? 'Claimed' : 'Returned');
@@ -160,11 +160,13 @@ const ItemDetailScreen = ({ route }) => {
 
   return (
     <>
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4B6CB7" />
-          <Text style={styles.loadingText}>Loading post...</Text>
-        </View>
+              {loading ? (
+          <View style={styles.loadingContainer}>
+            <LoadingAnimation 
+              style={styles.loadingAnimation}
+            />
+            <Text style={styles.loadingText}>Loading post...</Text>
+          </View>
       ) : (
         <> 
           <Modal
@@ -440,10 +442,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 12,
   },
-  detailsContainer: {
-    padding: 20,
-    backgroundColor: '#FAFAFA',
-    borderTopLeftRadius: 20,
+    detailsContainer: {
+      padding: 20,
+      backgroundColor: '#FAFAFA',
+      borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     marginTop: -14,
     elevation: 4,
@@ -597,6 +599,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#4B6CB7',
     fontWeight: '500',
+  },
+  loadingAnimation: {
+    marginBottom: 20,
   },
   shareButton: {
     padding: 8,

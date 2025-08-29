@@ -145,7 +145,10 @@ return (
       <TouchableOpacity onPress={() => navigation.goBack()}>
         <Icon name="chevron-back" size={wp('7%')} color="#374151" />
       </TouchableOpacity>
-      <Text style={styles.title}>Profile Details</Text>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={styles.title}>Profile Details</Text>
+      </View>
+      <View style={{ width: wp('7%') }} />
     </View>
 
     <View style={styles.imageContainer}>
@@ -247,8 +250,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: wp('6.5%'),
     fontWeight: 'bold',
-    // marginLeft: hp('10.9%'),
     color: '#374151',
+    textAlign: 'center',
   },
   imageContainer: { alignItems: 'center', marginBottom: hp('2.5%') },
   imageWrapper: {

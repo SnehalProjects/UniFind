@@ -35,31 +35,29 @@ const SettingScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
             <Icon name="chevron-back" size={28} color="#374151" />
         </TouchableOpacity>    
-        <View style={styles.greetingContainer}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={styles.title}>Settings</Text>
         </View>
-        <View style={styles.iconRow}>
-          <TouchableOpacity>
-            <Icon name="notifications-outline" size={22} color="black" />
-          </TouchableOpacity>
-        </View>
+        <View style={{ width: 28 }} />
       </View>
 
       <View style={styles.section}>
         <SettingItem icon="person-circle-outline" title="Your Profile" subtitle="Update your details" onPress={() => navigation.navigate('ProfileScreen')} />
-        <SettingItem icon="key-outline" title="Manage Password" subtitle="Change your password" />
-        <SettingItem icon="lock-open-outline" title="Forgot Password" subtitle="Recover your password" />
+        <SettingItem icon="key-outline" title="Manage Password" subtitle="Change your password" onPress={() => navigation.navigate('ChangePassScreen')}/>
+        <SettingItem icon="lock-open-outline" title="Forgot Password" subtitle="Recover your password" onPress={() => navigation.navigate('ForgotPassScreen')} />
         <SettingItem icon="create-outline" title="Manage Posts" subtitle="Edit or delete posts" onPress={() => navigation.navigate('MyPostsScreen')} />
       </View>
 
       <View style={styles.section}>
-        <SettingItem icon="help-circle-outline" title="FAQs" subtitle="Frequently asked questions" onPress={() => navigation.navigate('FAQScreen')} />
-        <SettingItem icon="document-text-outline" title="Terms & Conditions" subtitle="Read our terms and policies" />
+        <SettingItem icon="reader-outline" title="FAQs" subtitle="Frequently asked questions" onPress={() => navigation.navigate('FAQScreen')} />
+        <SettingItem icon="help-circle-outline" title="Help & Support" subtitle="FAQs, Contact support" onPress={() => navigation.navigate('HelpSupportScreen')} />
+        
       </View>
 
       <View style={styles.section}>
-        <SettingItem icon="help-circle-outline" title="Help & Support" subtitle="FAQs, Contact support" onPress={() => navigation.navigate('HelpSupportScreen')} />
-        <SettingItem icon="information-circle-outline" title="About Us" subtitle="Version 1.0, Terms & Conditions" />
+        
+      <SettingItem icon="information-circle-outline" title="About Us" subtitle="Version 1.0, Terms & Conditions" onPress={() => navigation.navigate('AboutUsScreen')}/>
+        <SettingItem icon="trash-outline" title="Delete Account" subtitle="Read our terms and policies" onPress={() => navigation.navigate('DeleteAccountScreen')} />
         
         <TouchableOpacity onPress={handleLogout} style={styles.logoutRow}>
           <Icon name="log-out-outline" size={22} color="#ef4444" />

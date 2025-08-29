@@ -12,7 +12,9 @@ import {
   Modal,
   PermissionsAndroid,
 } from 'react-native';
-import firestore, { firebase } from '@react-native-firebase/firestore';
+import { getApp } from '@react-native-firebase/app';
+import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, serverTimestamp, Timestamp } from '@react-native-firebase/firestore';
+import { getAuth } from '@react-native-firebase/auth';
 import {
   launchCamera,
   launchImageLibrary,
@@ -22,7 +24,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import Toast from 'react-native-toast-message';
 import NetInfo from '@react-native-community/netinfo';
 import { useNavigation } from '@react-navigation/native';
-import auth from '@react-native-firebase/auth';
 
 
 const IMGBB_API_KEY = '0c8654c65866f2d583a13f9cd54da770'; 
@@ -81,6 +82,9 @@ const uploadImageToImgbb = async (base64data) => {
 
 const PostItemScreen = () => {
   const navigation = useNavigation();
+  const app = getApp();
+  const firestore = getFirestore(app);
+  const auth = getAuth(app);
   const [itemType, setItemType] = useState('Lost');
   const [imageUri, setImageUri] = useState(null);
   const [itemName, setItemName] = useState('');
@@ -96,11 +100,11 @@ const PostItemScreen = () => {
 
   useState(() => {
   const fetchUserEmail = async () => {
-    const currentUser = auth().currentUser;
+    const currentUser = auth.currentUser;
     if (!currentUser) return;
 
     try {
-      const doc = await firestore().collection('users').doc(currentUser.uid).get();
+      const doc = await doc(collection(firestore, 'users'), currentUser.uid).get();
       if (doc.exists) {
         const userData = doc.data();
         setEmail(userData.email || '');
@@ -207,7 +211,7 @@ const PostItemScreen = () => {
       // Upload image to imgbb
       const imageUrl = imageUri ? await uploadImageToImgbb(imageBase64) : null;
 
-      await firestore().collection('items').add({
+      await addDoc(collection(firestore, 'items'), {
         itemType,
         itemName,
         category,
@@ -216,7 +220,7 @@ const PostItemScreen = () => {
         date: date.toISOString(),
         email: email.trim().toLowerCase(),
         imageUrl,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
         status: 'Active'
       });
 
